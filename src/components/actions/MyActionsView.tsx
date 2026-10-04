@@ -23,7 +23,16 @@ import {
   CheckIcon,
   CheckSquareIcon,
   SortAscIcon,
+  DownloadIcon,
+  ChevronDownIcon,
+  TableIcon,
 } from "../ui/icons";
+import {
+  exportToPdf,
+  exportToCsv,
+  exportToMarkdown,
+  exportToIcs,
+} from "@/lib/export/exportActions";
 
 export interface MyActionsViewProps {
   onGoToUpload?: () => void;
@@ -56,6 +65,19 @@ export function MyActionsView({
   // Multi-select state
   const [isSelectMode, setIsSelectMode] = React.useState<boolean>(false);
   const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
+
+  // Export dropdown & notifications
+  const [isExportOpen, setIsExportOpen] = React.useState<boolean>(false);
+  const [isBatchExportOpen, setIsBatchExportOpen] = React.useState<boolean>(false);
+  const [exportScope, setExportScope] = React.useState<"selected" | "visible">("visible");
+  const [exportLoadingFormat, setExportLoadingFormat] = React.useState<string | null>(null);
+  const [toast, setToast] = React.useState<{
+    type: "success" | "error" | "info";
+    text: string;
+  } | null>(null);
+
+  const exportDropdownRef = React.useRef<HTMLDivElement | null>(null);
+  const batchExportDropdownRef = React.useRef<HTMLDivElement | null>(null);
 
   // Delete confirmation modal
   const [confirmModal, setConfirmModal] = React.useState<ConfirmModalState>({
@@ -410,6 +432,121 @@ export function MyActionsView({
     await bulkDeleteActions(idsToDelete, isDeleteAll && statusFilter === "all" && categoryFilter === "all");
   };
 
+  // Auto-dismiss toast after 4s
+  React.useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => {
+      setToast(null);
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, [toast]);
+
+  // Click-outside listener for export menus
+  React.useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        exportDropdownRef.current &&
+        !exportDropdownRef.current.contains(e.target as Node)
+      ) {
+        setIsExportOpen(false);
+      }
+      if (
+        batchExportDropdownRef.current &&
+        !batchExportDropdownRef.current.contains(e.target as Node)
+      ) {
+        setIsBatchExportOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Export trigger handler
+  const handleExport = (
+    format: "pdf" | "csv" | "md" | "ics",
+    targetScope: "selected" | "visible" = "visible"
+  ) => {
+    let targetActions: ActionItem[] = [];
+    let scopeLabel = "";
+
+    if (targetScope === "selected" && isSelectMode && selectedIds.size > 0) {
+      targetActions = visibleTasks.filter((t) => selectedIds.has(t.id));
+      scopeLabel = `${targetActions.length} Selected Task${targetActions.length === 1 ? "" : "s"}`;
+    } else {
+      targetActions = visibleTasks;
+      if (statusFilter === "not_completed") {
+        scopeLabel = categoryFilter === "all" ? "Pending Tasks" : `Pending Tasks (${categoryFilter})`;
+      } else if (statusFilter === "completed") {
+        scopeLabel = categoryFilter === "all" ? "Completed Tasks" : `Completed Tasks (${categoryFilter})`;
+      } else {
+        scopeLabel = categoryFilter === "all" ? "All Workspace Tasks" : `${categoryFilter} Tasks`;
+      }
+    }
+
+    if (targetActions.length === 0) {
+      setToast({
+        type: "info",
+        text: "No actions to export in the current view or selection.",
+      });
+      setIsExportOpen(false);
+      setIsBatchExportOpen(false);
+      return;
+    }
+
+    setExportLoadingFormat(format);
+
+    // Give browser a frame to paint the loading state
+    setTimeout(() => {
+      try {
+        let result: { success: boolean; count: number; error?: string };
+        const opts = { scopeLabel };
+
+        switch (format) {
+          case "pdf":
+            result = exportToPdf(targetActions, opts);
+            break;
+          case "csv":
+            result = exportToCsv(targetActions, opts);
+            break;
+          case "md":
+            result = exportToMarkdown(targetActions, opts);
+            break;
+          case "ics":
+            result = exportToIcs(targetActions, opts);
+            break;
+        }
+
+        if (result.success) {
+          const names: Record<string, string> = {
+            pdf: "PDF Checklist",
+            csv: "CSV Spreadsheet",
+            md: "Markdown Checklist",
+            ics: "Calendar (.ics)",
+          };
+          setToast({
+            type: "success",
+            text: `Exported ${result.count} task${result.count === 1 ? "" : "s"} to ${names[format]}.`,
+          });
+        } else {
+          setToast({
+            type: "error",
+            text: result.error || "Failed to export tasks.",
+          });
+        }
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : "Failed to generate export file.";
+        setToast({
+          type: "error",
+          text: msg,
+        });
+      } finally {
+        setExportLoadingFormat(null);
+        setIsExportOpen(false);
+        setIsBatchExportOpen(false);
+      }
+    }, 50);
+  };
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center p-12 space-y-3">
@@ -639,6 +776,183 @@ export function MyActionsView({
               </div>
             </div>
 
+            {/* Export Actions Dropdown */}
+            <div className="relative" ref={exportDropdownRef}>
+              <button
+                type="button"
+                onClick={() => setIsExportOpen((prev) => !prev)}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all duration-150 cursor-pointer border select-none ${
+                  isExportOpen
+                    ? "bg-[#132418] text-[#e8ff47] border-[#e8ff47]/50 shadow-[0_0_10px_rgba(232,255,71,0.15)] font-semibold"
+                    : "bg-[#08120c] text-zinc-300 hover:text-white hover:bg-[#0e1911] border-[rgba(140,170,120,0.2)]"
+                }`}
+                aria-label="Export actions menu"
+                aria-haspopup="true"
+                aria-expanded={isExportOpen}
+              >
+                <DownloadIcon size={14} className="text-[#e8ff47]" />
+                <span>Export</span>
+                <ChevronDownIcon
+                  size={12}
+                  className={`text-zinc-400 transition-transform duration-150 ${
+                    isExportOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+
+              {isExportOpen && (
+                <div
+                  role="menu"
+                  aria-label="Export options"
+                  className="absolute right-0 mt-2 w-72 rounded-2xl bg-[#08130c]/98 border border-[rgba(140,170,120,0.25)] shadow-[0_16px_40px_rgba(0,0,0,0.9)] backdrop-blur-xl z-30 p-2 space-y-1 animate-in fade-in-0 zoom-in-95 duration-100"
+                >
+                  {/* Scope Selector if in Multi-Select with selections */}
+                  {isSelectMode && selectedCount > 0 ? (
+                    <div className="p-2 mb-1 bg-[#050e09] rounded-xl border border-[rgba(140,170,120,0.15)]">
+                      <div className="text-[10px] uppercase font-semibold tracking-wider text-zinc-400 mb-1.5">
+                        Export Target
+                      </div>
+                      <div className="grid grid-cols-2 gap-1">
+                        <button
+                          type="button"
+                          onClick={() => setExportScope("selected")}
+                          className={`px-2 py-1 rounded-lg text-xs font-medium cursor-pointer transition-all ${
+                            exportScope === "selected"
+                              ? "bg-[#e8ff47]/20 text-[#e8ff47] border border-[#e8ff47]/40 shadow-xs"
+                              : "text-zinc-400 hover:text-zinc-200 border border-transparent"
+                          }`}
+                        >
+                          Selected ({selectedCount})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setExportScope("visible")}
+                          className={`px-2 py-1 rounded-lg text-xs font-medium cursor-pointer transition-all ${
+                            exportScope === "visible"
+                              ? "bg-[#e8ff47]/20 text-[#e8ff47] border border-[#e8ff47]/40 shadow-xs"
+                              : "text-zinc-400 hover:text-zinc-200 border border-transparent"
+                          }`}
+                        >
+                          All Visible ({visibleTasks.length})
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="px-2.5 py-1.5 text-[11px] text-zinc-400 border-b border-[rgba(140,170,120,0.12)] mb-1 flex items-center justify-between">
+                      <span className="font-medium text-zinc-300">Export Actions</span>
+                      <span className="text-zinc-400 font-mono text-[10px] bg-[#0e1911] px-1.5 py-0.5 rounded border border-[rgba(140,170,120,0.15)]">
+                        {visibleTasks.length} visible
+                      </span>
+                    </div>
+                  )}
+
+                  {/* PDF Checklist */}
+                  <button
+                    type="button"
+                    role="menuitem"
+                    disabled={Boolean(exportLoadingFormat)}
+                    onClick={() => handleExport("pdf", isSelectMode && selectedCount > 0 ? exportScope : "visible")}
+                    className="w-full flex items-start gap-2.5 p-2 rounded-xl text-left transition-all duration-150 hover:bg-[#122217] cursor-pointer group disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <div className="p-1.5 rounded-lg bg-[#0e1c12] border border-[#e8ff47]/20 text-[#e8ff47] group-hover:border-[#e8ff47]/50 shrink-0 mt-0.5">
+                      {exportLoadingFormat === "pdf" ? (
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-zinc-500 border-t-[#e8ff47]" />
+                      ) : (
+                        <DocumentIcon size={16} />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs font-semibold text-zinc-200 group-hover:text-white flex items-center justify-between">
+                        <span>PDF Checklist</span>
+                        <span className="text-[10px] font-mono text-zinc-400 uppercase">.pdf</span>
+                      </div>
+                      <p className="text-[11px] text-zinc-400 group-hover:text-zinc-300 leading-snug">
+                        Printable report with checkboxes & metadata
+                      </p>
+                    </div>
+                  </button>
+
+                  {/* CSV Spreadsheet */}
+                  <button
+                    type="button"
+                    role="menuitem"
+                    disabled={Boolean(exportLoadingFormat)}
+                    onClick={() => handleExport("csv", isSelectMode && selectedCount > 0 ? exportScope : "visible")}
+                    className="w-full flex items-start gap-2.5 p-2 rounded-xl text-left transition-all duration-150 hover:bg-[#122217] cursor-pointer group disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <div className="p-1.5 rounded-lg bg-emerald-950/40 border border-emerald-500/20 text-emerald-400 group-hover:border-emerald-500/50 shrink-0 mt-0.5">
+                      {exportLoadingFormat === "csv" ? (
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-zinc-500 border-t-emerald-400" />
+                      ) : (
+                        <TableIcon size={16} />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs font-semibold text-zinc-200 group-hover:text-white flex items-center justify-between">
+                        <span>CSV Spreadsheet</span>
+                        <span className="text-[10px] font-mono text-zinc-400 uppercase">.csv</span>
+                      </div>
+                      <p className="text-[11px] text-zinc-400 group-hover:text-zinc-300 leading-snug">
+                        Excel & Google Sheets compatible tabular data
+                      </p>
+                    </div>
+                  </button>
+
+                  {/* Markdown Checklist */}
+                  <button
+                    type="button"
+                    role="menuitem"
+                    disabled={Boolean(exportLoadingFormat)}
+                    onClick={() => handleExport("md", isSelectMode && selectedCount > 0 ? exportScope : "visible")}
+                    className="w-full flex items-start gap-2.5 p-2 rounded-xl text-left transition-all duration-150 hover:bg-[#122217] cursor-pointer group disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <div className="p-1.5 rounded-lg bg-cyan-950/40 border border-cyan-500/20 text-cyan-400 group-hover:border-cyan-500/50 shrink-0 mt-0.5">
+                      {exportLoadingFormat === "md" ? (
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-zinc-500 border-t-cyan-400" />
+                      ) : (
+                        <CheckSquareIcon size={16} />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs font-semibold text-zinc-200 group-hover:text-white flex items-center justify-between">
+                        <span>Markdown Checklist</span>
+                        <span className="text-[10px] font-mono text-zinc-400 uppercase">.md</span>
+                      </div>
+                      <p className="text-[11px] text-zinc-400 group-hover:text-zinc-300 leading-snug">
+                        Formatted checklist for Notion, Obsidian & GitHub
+                      </p>
+                    </div>
+                  </button>
+
+                  {/* Calendar Events */}
+                  <button
+                    type="button"
+                    role="menuitem"
+                    disabled={Boolean(exportLoadingFormat)}
+                    onClick={() => handleExport("ics", isSelectMode && selectedCount > 0 ? exportScope : "visible")}
+                    className="w-full flex items-start gap-2.5 p-2 rounded-xl text-left transition-all duration-150 hover:bg-[#122217] cursor-pointer group disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <div className="p-1.5 rounded-lg bg-amber-950/40 border border-amber-500/20 text-amber-400 group-hover:border-amber-500/50 shrink-0 mt-0.5">
+                      {exportLoadingFormat === "ics" ? (
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-zinc-500 border-t-amber-400" />
+                      ) : (
+                        <CalendarIcon size={16} />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs font-semibold text-zinc-200 group-hover:text-white flex items-center justify-between">
+                        <span>Calendar Events</span>
+                        <span className="text-[10px] font-mono text-zinc-400 uppercase">.ics</span>
+                      </div>
+                      <p className="text-[11px] text-zinc-400 group-hover:text-zinc-300 leading-snug">
+                        Deadlines for Apple, Google & Outlook calendars
+                      </p>
+                    </div>
+                  </button>
+                </div>
+              )}
+            </div>
+
             {/* Multi-Select Mode Button */}
             <button
               type="button"
@@ -731,6 +1045,90 @@ export function MyActionsView({
               <ClockIcon size={14} className="text-amber-400" />
               <span>Mark Not Completed</span>
             </button>
+
+            {/* Export Selected Tasks Dropdown */}
+            <div className="relative" ref={batchExportDropdownRef}>
+              <button
+                type="button"
+                disabled={selectedCount === 0}
+                onClick={() => setIsBatchExportOpen((prev) => !prev)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all duration-150 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed bg-[#08120c] text-zinc-200 hover:text-white hover:bg-[#0e1911] border border-[rgba(140,170,120,0.25)] active:scale-[0.98]"
+                aria-label="Export selected tasks"
+                aria-haspopup="true"
+                aria-expanded={isBatchExportOpen}
+              >
+                <DownloadIcon size={14} className="text-[#e8ff47]" />
+                <span>Export Selected</span>
+                <ChevronDownIcon
+                  size={12}
+                  className={`text-zinc-400 transition-transform duration-150 ${
+                    isBatchExportOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+
+              {isBatchExportOpen && (
+                <div
+                  role="menu"
+                  aria-label="Export selected tasks menu"
+                  className="absolute right-0 mt-2 w-64 rounded-2xl bg-[#08130c]/98 border border-[rgba(140,170,120,0.25)] shadow-[0_16px_40px_rgba(0,0,0,0.9)] backdrop-blur-xl z-30 p-2 space-y-1 animate-in fade-in-0 zoom-in-95 duration-100"
+                >
+                  <div className="px-2.5 py-1 text-[11px] text-zinc-400 border-b border-[rgba(140,170,120,0.12)] mb-1 flex items-center justify-between">
+                    <span className="font-medium text-zinc-300">
+                      Export {selectedCount} Selected
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    role="menuitem"
+                    disabled={Boolean(exportLoadingFormat)}
+                    onClick={() => handleExport("pdf", "selected")}
+                    className="w-full flex items-center gap-2 px-2.5 py-2 rounded-xl text-left text-xs font-medium text-zinc-200 hover:text-white hover:bg-[#122217] transition-colors cursor-pointer group disabled:opacity-50"
+                  >
+                    <DocumentIcon size={14} className="text-[#e8ff47]" />
+                    <span className="flex-1">PDF Checklist</span>
+                    <span className="text-[10px] text-zinc-400 font-mono">.pdf</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    role="menuitem"
+                    disabled={Boolean(exportLoadingFormat)}
+                    onClick={() => handleExport("csv", "selected")}
+                    className="w-full flex items-center gap-2 px-2.5 py-2 rounded-xl text-left text-xs font-medium text-zinc-200 hover:text-white hover:bg-[#122217] transition-colors cursor-pointer group disabled:opacity-50"
+                  >
+                    <TableIcon size={14} className="text-emerald-400" />
+                    <span className="flex-1">CSV Spreadsheet</span>
+                    <span className="text-[10px] text-zinc-400 font-mono">.csv</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    role="menuitem"
+                    disabled={Boolean(exportLoadingFormat)}
+                    onClick={() => handleExport("md", "selected")}
+                    className="w-full flex items-center gap-2 px-2.5 py-2 rounded-xl text-left text-xs font-medium text-zinc-200 hover:text-white hover:bg-[#122217] transition-colors cursor-pointer group disabled:opacity-50"
+                  >
+                    <CheckSquareIcon size={14} className="text-cyan-400" />
+                    <span className="flex-1">Markdown Checklist</span>
+                    <span className="text-[10px] text-zinc-400 font-mono">.md</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    role="menuitem"
+                    disabled={Boolean(exportLoadingFormat)}
+                    onClick={() => handleExport("ics", "selected")}
+                    className="w-full flex items-center gap-2 px-2.5 py-2 rounded-xl text-left text-xs font-medium text-zinc-200 hover:text-white hover:bg-[#122217] transition-colors cursor-pointer group disabled:opacity-50"
+                  >
+                    <CalendarIcon size={14} className="text-amber-400" />
+                    <span className="flex-1">Calendar Events</span>
+                    <span className="text-[10px] text-zinc-400 font-mono">.ics</span>
+                  </button>
+                </div>
+              )}
+            </div>
 
             {/* Delete Selected */}
             <button
@@ -980,6 +1378,38 @@ export function MyActionsView({
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Toast Notification for Export & Actions */}
+      {toast && (
+        <div
+          role="status"
+          aria-live="polite"
+          className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-2xl border shadow-[0_12px_36px_rgba(0,0,0,0.85)] backdrop-blur-xl transition-all duration-300 animate-in fade-in-0 slide-in-from-bottom-3 ${
+            toast.type === "success"
+              ? "bg-[#09170f]/95 border-emerald-500/50 text-emerald-200"
+              : toast.type === "error"
+              ? "bg-[#180a0a]/95 border-rose-500/50 text-rose-200"
+              : "bg-[#0c1610]/95 border-[#e8ff47]/40 text-[#e8ff47]"
+          }`}
+        >
+          {toast.type === "success" ? (
+            <CheckCircleIcon size={18} className="text-emerald-400 shrink-0" />
+          ) : toast.type === "error" ? (
+            <AlertCircleIcon size={18} className="text-rose-400 shrink-0" />
+          ) : (
+            <DownloadIcon size={18} className="text-[#e8ff47] shrink-0" />
+          )}
+          <p className="text-xs font-medium">{toast.text}</p>
+          <button
+            type="button"
+            onClick={() => setToast(null)}
+            className="p-1 text-zinc-400 hover:text-white rounded-lg hover:bg-white/10 transition-colors ml-1 cursor-pointer"
+            aria-label="Dismiss message"
+          >
+            <XIcon size={14} />
+          </button>
         </div>
       )}
     </div>
