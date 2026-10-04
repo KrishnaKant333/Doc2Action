@@ -4,6 +4,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { Header } from "@/components/ui/header";
 import { InteractiveBackground } from "@/components/ui/InteractiveBackground";
+import { ScrollToTop } from "@/components/ui/ScrollToTop";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -54,6 +55,7 @@ export default function RootLayout({
         <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-8 relative z-10">
           {children}
         </main>
+        <ScrollToTop threshold={300} />
       </body>
     </html>
   );

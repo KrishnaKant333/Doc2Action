@@ -29,16 +29,17 @@ export function InteractiveBackground() {
         }}
       />
 
-      {/* Layer 2: Stationary centered ambient lime (#e8ff47) soft atmospheric glow */}
+      {/* Layer 2: Stationary centered ambient lime (#e8ff47) atmospheric glow */}
       <div
-        className="absolute left-1/2 top-[46%] -translate-x-1/2 -translate-y-1/2 w-[360px] h-[480px] sm:w-[680px] sm:h-[620px] lg:w-[940px] lg:h-[760px] pointer-events-none rounded-full blur-[70px] sm:blur-[90px] lg:blur-[110px] animate-ambient-glow"
+        className="absolute left-1/2 top-[44%] -translate-x-1/2 -translate-y-1/2 w-[420px] h-[520px] sm:w-[720px] sm:h-[650px] lg:w-[1020px] lg:h-[820px] pointer-events-none rounded-full blur-[28px] sm:blur-[36px]"
         style={{
           background: `radial-gradient(
             ellipse at center,
-            rgba(232, 255, 71, 0.09) 0%,
-            rgba(232, 255, 71, 0.055) 32%,
-            rgba(232, 255, 71, 0.02) 58%,
-            transparent 75%
+            rgba(232, 255, 71, 0.13) 0%,
+            rgba(232, 255, 71, 0.085) 25%,
+            rgba(232, 255, 71, 0.048) 45%,
+            rgba(232, 255, 71, 0.018) 65%,
+            transparent 80%
           )`,
         }}
       />

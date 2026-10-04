@@ -33,26 +33,26 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-@keyframes ambientGlowPulse {
-  0%, 100% {
-    opacity: 0.88;
-    transform: translate(-50%, -50%) scale(1);
-  }
-  50% {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1.03);
-  }
+/* Hide visual scrollbar cross-browser while preserving mouse, touch, and keyboard scrolling */
+html {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE / Edge */
 }
 
-.animate-ambient-glow {
-  animation: ambientGlowPulse 10s ease-in-out infinite;
+html::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Edge, WebKit */
+  width: 0;
+  height: 0;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .animate-ambient-glow {
-    animation: none;
-    opacity: 0.92;
-    transform: translate(-50%, -50%) scale(1);
-  }
+body {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE / Edge */
+}
+
+body::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Edge, WebKit */
+  width: 0;
+  height: 0;
 }
 

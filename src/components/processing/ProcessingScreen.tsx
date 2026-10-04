@@ -7,7 +7,6 @@ import { ProgressTimeline } from "../ui/progress-indicator";
 import { DocumentIcon, AlertCircleIcon, XIcon, CheckCircleIcon } from "../ui/icons";
 import { Button } from "../ui/button";
 import { formatFileSize, getFileTypeLabel } from "../upload/fileValidation";
-import { ScrollToTop } from "../ui/ScrollToTop";
 
 export interface ProcessingScreenProps {
   files: File[];
@@ -244,9 +243,6 @@ export function ProcessingScreen({
           )}
         </div>
       )}
-
-      {/* Floating Go to Top control for document analysis/processing state */}
-      <ScrollToTop threshold={100} />
     </div>
   );
 }
