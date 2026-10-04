@@ -27,7 +27,7 @@ export interface MyActionsViewProps {
   className?: string;
 }
 
-type CategoryFilter = "all" | "upcoming" | "general";
+type CategoryFilter = "all" | "upcoming" | "general" | "not_completed";
 
 interface ConfirmModalState {
   isOpen: boolean;
@@ -224,6 +224,9 @@ export function MyActionsView({
       if (categoryFilter === "general") {
         return tasks.filter((t) => !t.deadline || t.category === "general");
       }
+      if (categoryFilter === "not_completed") {
+        return tasks.filter((t) => t.status !== "completed");
+      }
       return tasks;
     },
     [categoryFilter]
@@ -248,6 +251,17 @@ export function MyActionsView({
     () => allTasks.filter((t) => !t.deadline || t.category === "general").length,
     [allTasks]
   );
+
+  const notCompletedCount = React.useMemo(
+    () => allTasks.filter((t) => t.status !== "completed").length,
+    [allTasks]
+  );
+
+  // Switch category filter and clear selection state to prevent stale selected IDs
+  const handleFilterChange = React.useCallback((filter: CategoryFilter) => {
+    setCategoryFilter(filter);
+    setSelectedIds(new Set());
+  }, []);
 
   // Bulk Action: Mark Selected as Completed
   const handleMarkSelectedCompleted = async () => {
@@ -441,19 +455,19 @@ export function MyActionsView({
           aria-label="Bulk task actions"
           className="p-3.5 sm:p-4 rounded-xl border border-[rgba(140,170,120,0.15)] bg-[#0b120d]/90 backdrop-blur-md shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4"
         >
-          {/* Category Filter Tabs: Upcoming & General */}
+          {/* Category Filter Tabs: Upcoming, General & Not Completed */}
           <div className="flex items-center gap-2.5 flex-wrap">
             <span className="text-xs text-zinc-400 font-mono hidden sm:inline">Category:</span>
             <div
               role="tablist"
               aria-label="Filter actions by category"
-              className="inline-flex items-center p-1 rounded-xl bg-[#08120c] border border-[rgba(140,170,120,0.15)] text-xs"
+              className="inline-flex items-center p-1 rounded-xl bg-[#08120c] border border-[rgba(140,170,120,0.15)] text-xs flex-wrap gap-1"
             >
               <button
                 type="button"
                 role="tab"
                 aria-selected={categoryFilter === "all"}
-                onClick={() => setCategoryFilter("all")}
+                onClick={() => handleFilterChange("all")}
                 className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer font-medium ${
                   categoryFilter === "all"
                     ? "bg-[#0e1911] text-zinc-100 border border-[rgba(140,170,120,0.22)] shadow-2xs font-semibold"
@@ -466,7 +480,7 @@ export function MyActionsView({
                 type="button"
                 role="tab"
                 aria-selected={categoryFilter === "upcoming"}
-                onClick={() => setCategoryFilter("upcoming")}
+                onClick={() => handleFilterChange("upcoming")}
                 className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer font-medium ${
                   categoryFilter === "upcoming"
                     ? "bg-[#0e1911] text-zinc-100 border border-[rgba(140,170,120,0.22)] shadow-2xs font-semibold"
@@ -479,7 +493,7 @@ export function MyActionsView({
                 type="button"
                 role="tab"
                 aria-selected={categoryFilter === "general"}
-                onClick={() => setCategoryFilter("general")}
+                onClick={() => handleFilterChange("general")}
                 className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer font-medium ${
                   categoryFilter === "general"
                     ? "bg-[#0e1911] text-zinc-100 border border-[rgba(140,170,120,0.22)] shadow-2xs font-semibold"
@@ -487,6 +501,19 @@ export function MyActionsView({
                 }`}
               >
                 General ({generalCount})
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={categoryFilter === "not_completed"}
+                onClick={() => handleFilterChange("not_completed")}
+                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer font-medium ${
+                  categoryFilter === "not_completed"
+                    ? "bg-[#0e1911] text-zinc-100 border border-[rgba(140,170,120,0.22)] shadow-2xs font-semibold"
+                    : "text-zinc-400 hover:text-zinc-200 hover:bg-[#0e1911]/60"
+                }`}
+              >
+                Not Completed ({notCompletedCount})
               </button>
             </div>
 
@@ -580,10 +607,14 @@ export function MyActionsView({
           </div>
           <div className="space-y-1">
             <h2 className="text-base sm:text-lg font-serif font-normal text-zinc-100">
-              No actions yet
+              {categoryFilter === "not_completed"
+                ? "No pending tasks"
+                : "No actions yet"}
             </h2>
             <p className="text-xs sm:text-sm text-zinc-400 max-w-sm mx-auto">
-              Tasks extracted from analyzed documents will appear here.
+              {categoryFilter === "not_completed"
+                ? "All tasks are completed. Switch to All or Completed to review them."
+                : "Tasks extracted from analyzed documents will appear here."}
             </p>
           </div>
           {onGoToUpload && (
@@ -635,6 +666,8 @@ export function MyActionsView({
                   ? "General Tasks"
                   : categoryFilter === "upcoming"
                   ? "Upcoming Deadlines"
+                  : categoryFilter === "not_completed"
+                  ? "Upcoming & General (Pending)"
                   : "Upcoming & General"
               }
               icon={<CalendarIcon size={16} className="text-zinc-400" />}

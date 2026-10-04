@@ -237,7 +237,7 @@ export function UploadWorkflow({
         </div>
 
         {/* Right Column: Upload Zone / Selected Files & Primary Action Bar */}
-        <div className="lg:col-span-7 space-y-6 lg:pt-8">
+        <div className="lg:col-span-7 space-y-6 lg:pt-14">
           {items.length === 0 ? (
             <UploadDropzone onFilesSelect={handleFilesAdded} />
           ) : (
