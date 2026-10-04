@@ -252,7 +252,7 @@ export function ResultsDashboard({
             <CheckCircleIcon size={24} />
           </div>
           <div className="space-y-1">
-            <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+            <h2 className="text-lg font-serif font-normal text-zinc-900 dark:text-zinc-100">
               No Actionable Items Found
             </h2>
             <p className="text-sm text-zinc-500 dark:text-zinc-400 max-w-md mx-auto">
@@ -271,7 +271,7 @@ export function ResultsDashboard({
           <section aria-label="Extracted action items" className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <h2 className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
+                <h2 className="text-lg font-serif font-normal tracking-tight text-zinc-900 dark:text-zinc-100">
                   Action Items
                 </h2>
                 <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
@@ -293,7 +293,7 @@ export function ResultsDashboard({
           <section aria-label="Action items grouped by document" className="space-y-6">
             <div className="flex items-center justify-between border-b border-zinc-200/80 dark:border-zinc-800/80 pb-3">
               <div className="flex items-center gap-2">
-                <h2 className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
+                <h2 className="text-lg font-serif font-normal tracking-tight text-zinc-900 dark:text-zinc-100">
                   Action Items by Document
                 </h2>
                 <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
@@ -378,7 +378,7 @@ export function ResultsDashboard({
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <CalendarIcon size={16} className="text-zinc-500" />
-                      <CardTitle className="text-base font-semibold">
+                      <CardTitle className="text-base font-serif font-normal">
                         Upcoming Deadlines
                       </CardTitle>
                     </div>
@@ -419,7 +419,7 @@ export function ResultsDashboard({
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <ClockIcon size={16} className="text-zinc-500" />
-                      <CardTitle className="text-base font-semibold">
+                      <CardTitle className="text-base font-serif font-normal">
                         Key Events & Dates
                       </CardTitle>
                     </div>
@@ -469,7 +469,7 @@ export function ResultsDashboard({
                 <div className="flex items-center justify-between border-b border-zinc-200/80 dark:border-zinc-800/80 pb-3">
                   <div className="flex items-center gap-2">
                     <CalendarIcon size={18} className="text-zinc-500" />
-                    <h2 className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
+                    <h2 className="text-lg font-serif font-normal tracking-tight text-zinc-900 dark:text-zinc-100">
                       Upcoming Deadlines by Document
                     </h2>
                     <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
@@ -553,7 +553,7 @@ export function ResultsDashboard({
                 <div className="flex items-center justify-between border-b border-zinc-200/80 dark:border-zinc-800/80 pb-3">
                   <div className="flex items-center gap-2">
                     <ClockIcon size={18} className="text-zinc-500" />
-                    <h2 className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
+                    <h2 className="text-lg font-serif font-normal tracking-tight text-zinc-900 dark:text-zinc-100">
                       Key Events & Dates by Document
                     </h2>
                     <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">

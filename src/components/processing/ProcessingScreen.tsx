@@ -7,6 +7,7 @@ import { ProgressTimeline } from "../ui/progress-indicator";
 import { DocumentIcon, AlertCircleIcon, XIcon, CheckCircleIcon } from "../ui/icons";
 import { Button } from "../ui/button";
 import { formatFileSize, getFileTypeLabel } from "../upload/fileValidation";
+import { ScrollToTop } from "../ui/ScrollToTop";
 
 export interface ProcessingScreenProps {
   files: File[];
@@ -205,7 +206,7 @@ export function ProcessingScreen({
         <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 sm:p-8 space-y-6 shadow-xs">
           {/* Status Title & Accessible Aria Live Region */}
           <div className="space-y-1 text-center">
-            <h2 className="text-lg sm:text-xl font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">
+            <h2 className="text-lg sm:text-xl font-serif font-normal text-zinc-900 dark:text-zinc-100 tracking-tight">
               {isCompleted
                 ? files.length > 1
                   ? "Batch Analysis Complete"
@@ -243,6 +244,9 @@ export function ProcessingScreen({
           )}
         </div>
       )}
+
+      {/* Floating Go to Top control for document analysis/processing state */}
+      <ScrollToTop threshold={100} />
     </div>
   );
 }

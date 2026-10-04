@@ -146,7 +146,7 @@ export function UploadWorkflow({
 
       {/* Header / Intro */}
       <div className="space-y-2 text-center sm:text-left">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
+        <h1 className="text-2xl sm:text-3xl font-serif font-normal tracking-tight text-zinc-900 dark:text-zinc-100">
           Upload Documents
         </h1>
         <p className="text-sm sm:text-base text-zinc-600 dark:text-zinc-400 leading-relaxed max-w-xl">
