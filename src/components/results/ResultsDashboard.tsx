@@ -43,24 +43,24 @@ export function ResultsDashboard({
   return (
     <div className={`space-y-8 animate-fade-in ${className}`}>
       {/* 1. Document Summary & Top Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs">
-        <div className="flex items-start sm:items-center gap-3.5 min-w-0">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs">
+        <div className="flex items-start sm:items-center gap-3.5 min-w-0 flex-1">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200 border border-zinc-200/60 dark:border-zinc-700/60">
             <DocumentIcon size={22} />
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
               <h1
-                className="text-base sm:text-lg font-bold text-zinc-900 dark:text-zinc-100 truncate max-w-[280px] sm:max-w-md"
+                className="text-base sm:text-lg font-bold text-zinc-900 dark:text-zinc-100 truncate max-w-full sm:max-w-md"
                 title={document.name}
               >
                 {document.name}
               </h1>
-              <span className="text-[11px] font-medium font-mono px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700">
+              <span className="text-[11px] font-medium font-mono px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700 shrink-0">
                 {typeLabel}
               </span>
             </div>
-            <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+            <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400 mt-1 flex-wrap">
               <span>{fileSizeFormatted}</span>
               <span>•</span>
               <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
@@ -77,6 +77,7 @@ export function ResultsDashboard({
             size="sm"
             onClick={onReset}
             className="text-xs"
+            aria-label="Analyze another document"
           >
             Analyze another document
           </Button>
@@ -84,9 +85,9 @@ export function ResultsDashboard({
       </div>
 
       {/* 2. Summary Metrics Row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <Card className="p-4 sm:p-5">
-          <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+      <section aria-label="Key document metrics" className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <Card className="p-3.5 sm:p-5">
+          <span className="text-[11px] sm:text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
             Total Actions
           </span>
           <div className="mt-2 flex items-baseline justify-between">
@@ -97,8 +98,8 @@ export function ResultsDashboard({
           </div>
         </Card>
 
-        <Card className="p-4 sm:p-5">
-          <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+        <Card className="p-3.5 sm:p-5">
+          <span className="text-[11px] sm:text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
             Deadlines
           </span>
           <div className="mt-2 flex items-baseline justify-between">
@@ -109,8 +110,8 @@ export function ResultsDashboard({
           </div>
         </Card>
 
-        <Card className="p-4 sm:p-5">
-          <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+        <Card className="p-3.5 sm:p-5">
+          <span className="text-[11px] sm:text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
             Events
           </span>
           <div className="mt-2 flex items-baseline justify-between">
@@ -121,8 +122,8 @@ export function ResultsDashboard({
           </div>
         </Card>
 
-        <Card className="p-4 sm:p-5">
-          <span className="text-xs font-medium text-rose-700 dark:text-rose-400 uppercase tracking-wider">
+        <Card className="p-3.5 sm:p-5">
+          <span className="text-[11px] sm:text-xs font-medium text-rose-700 dark:text-rose-400 uppercase tracking-wider">
             High Priority
           </span>
           <div className="mt-2 flex items-baseline justify-between">
@@ -132,7 +133,7 @@ export function ResultsDashboard({
             <span className="text-xs text-rose-500/80">urgent</span>
           </div>
         </Card>
-      </div>
+      </section>
 
       {/* 3. Empty Results State Handling */}
       {!hasActions && !hasDeadlines && !hasEvents ? (
@@ -156,7 +157,7 @@ export function ResultsDashboard({
         </Card>
       ) : (
         /* 4. Action Items Section */
-        <div className="space-y-4">
+        <section aria-label="Extracted action items" className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
@@ -176,12 +177,17 @@ export function ResultsDashboard({
               <ActionCard key={action.id} action={action} />
             ))}
           </div>
-        </div>
+        </section>
       )}
 
       {/* 5. Deadlines & Events Dual Section */}
       {(hasDeadlines || hasEvents) && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <section
+          aria-label="Deadlines and events"
+          className={`grid gap-6 ${
+            hasDeadlines && hasEvents ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1"
+          }`}
+        >
           {/* Upcoming Deadlines */}
           {hasDeadlines && (
             <Card>
@@ -266,28 +272,30 @@ export function ResultsDashboard({
               </CardContent>
             </Card>
           )}
-        </div>
+        </section>
       )}
 
-      {/* 6. Important Notes & Stipulations */}
+      {/* 6. Important Notes & Guidelines */}
       {hasNotes && (
-        <Card className="border-amber-200 dark:border-amber-900/60 bg-amber-50/40 dark:bg-amber-950/20">
-          <CardHeader className="p-4 sm:p-5 border-b border-amber-200/60 dark:border-amber-900/40">
-            <div className="flex items-center gap-2 text-amber-900 dark:text-amber-200">
-              <AlertCircleIcon size={18} className="shrink-0 text-amber-700 dark:text-amber-400" />
-              <CardTitle className="text-base font-semibold">
-                Important Information & Guidelines
-              </CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="p-4 sm:p-5">
-            <ul className="space-y-2 text-xs sm:text-sm text-amber-900/90 dark:text-amber-200/90 list-disc list-inside leading-relaxed">
-              {importantNotes.map((note, index) => (
-                <li key={index}>{note}</li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
+        <section aria-label="Important guidelines and notes">
+          <Card className="border-amber-200 dark:border-amber-900/60 bg-amber-50/40 dark:bg-amber-950/20">
+            <CardHeader className="p-4 sm:p-5 border-b border-amber-200/60 dark:border-amber-900/40">
+              <div className="flex items-center gap-2 text-amber-900 dark:text-amber-200">
+                <AlertCircleIcon size={18} className="shrink-0 text-amber-700 dark:text-amber-400" />
+                <CardTitle className="text-base font-semibold">
+                  Important Information & Guidelines
+                </CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="p-4 sm:p-5">
+              <ul className="space-y-2 text-xs sm:text-sm text-amber-900/90 dark:text-amber-200/90 list-disc list-inside leading-relaxed">
+                {importantNotes.map((note, index) => (
+                  <li key={index}>{note}</li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        </section>
       )}
 
       {/* 7. Bottom Action Reset Bar */}
@@ -301,6 +309,7 @@ export function ResultsDashboard({
           size="md"
           onClick={onReset}
           className="w-full sm:w-auto"
+          aria-label="Analyze another document"
         >
           <span>Analyze another document</span>
           <ArrowRightIcon size={14} className="ml-1.5" />

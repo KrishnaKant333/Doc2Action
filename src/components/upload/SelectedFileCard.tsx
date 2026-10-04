@@ -23,31 +23,31 @@ export function SelectedFileCard({
 
   return (
     <div
-      className={`rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 sm:p-6 shadow-xs ${className}`}
+      className={`rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 sm:p-6 shadow-xs ${className}`}
     >
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         {/* File Details Group */}
-        <div className="flex items-start sm:items-center gap-3.5 min-w-0">
+        <div className="flex items-start sm:items-center gap-3.5 min-w-0 flex-1">
           {/* Document Icon */}
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200 border border-zinc-200/60 dark:border-zinc-700/60">
-            <DocumentIcon size={24} />
+          <div className="flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-xl bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200 border border-zinc-200/60 dark:border-zinc-700/60">
+            <DocumentIcon size={22} />
           </div>
 
           {/* Metadata */}
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <h4
-                className="font-medium text-sm sm:text-base text-zinc-900 dark:text-zinc-100 truncate max-w-[260px] sm:max-w-md"
+              <h3
+                className="font-medium text-sm sm:text-base text-zinc-900 dark:text-zinc-100 truncate max-w-full sm:max-w-md"
                 title={file.name}
               >
                 {file.name}
-              </h4>
-              <span className="text-[11px] font-medium font-mono px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700">
+              </h3>
+              <span className="text-[11px] font-medium font-mono px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700 shrink-0">
                 {typeLabel}
               </span>
             </div>
 
-            <div className="flex items-center gap-2 mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+            <div className="flex items-center gap-2 mt-1 text-xs text-zinc-500 dark:text-zinc-400 flex-wrap">
               <span>{sizeString}</span>
               <span>•</span>
               <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
@@ -58,13 +58,14 @@ export function SelectedFileCard({
         </div>
 
         {/* Action Controls */}
-        <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+        <div className="flex items-center justify-end gap-2 shrink-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-zinc-100 dark:border-zinc-800/80">
           <Button
             type="button"
             variant="ghost"
             size="sm"
             onClick={onReplace}
             className="text-xs"
+            aria-label={`Change file ${file.name}`}
           >
             Change
           </Button>

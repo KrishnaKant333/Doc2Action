@@ -18,25 +18,33 @@ export function ProgressTimeline({
 }: ProgressTimelineProps) {
   const stepKeys = PROCESSING_STEPS.map((s) => s.key);
   const currentIndex = stepKeys.indexOf(currentStatus);
+  const clampedPercent = Math.min(100, Math.max(0, Math.round(progressPercent)));
 
   return (
     <div className={`w-full max-w-xl mx-auto space-y-6 ${className}`}>
-      {/* Progress Bar & Header */}
+      {/* Progress Bar & Header with ARIA semantics */}
       <div className="space-y-2">
         <div className="flex items-center justify-between text-xs font-medium text-zinc-500 dark:text-zinc-400">
           <span>{statusMessage || "Processing document..."}</span>
-          <span className="font-mono">{Math.round(progressPercent)}%</span>
+          <span className="font-mono">{clampedPercent}%</span>
         </div>
-        <div className="h-2 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+        <div
+          role="progressbar"
+          aria-valuenow={clampedPercent}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label={statusMessage || "Document processing progress"}
+          className="h-2 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden"
+        >
           <div
             className="h-full bg-zinc-900 dark:bg-zinc-100 rounded-full transition-all duration-300 ease-out"
-            style={{ width: `${Math.min(100, Math.max(0, progressPercent))}%` }}
+            style={{ width: `${clampedPercent}%` }}
           />
         </div>
       </div>
 
       {/* Steps List */}
-      <div className="space-y-3">
+      <div className="space-y-3" role="list" aria-label="Processing stages">
         {PROCESSING_STEPS.map((step, idx) => {
           const isCompleted =
             currentStatus === "complete" || (currentIndex !== -1 && idx < currentIndex);
@@ -45,6 +53,8 @@ export function ProgressTimeline({
           return (
             <div
               key={step.key}
+              role="listitem"
+              aria-current={isCurrent ? "step" : undefined}
               className={`flex items-start gap-3 p-3 rounded-lg border transition-colors ${
                 isCurrent
                   ? "bg-zinc-50 dark:bg-zinc-800/60 border-zinc-300 dark:border-zinc-700"
@@ -54,7 +64,7 @@ export function ProgressTimeline({
               }`}
             >
               {/* Step Status Icon */}
-              <div className="mt-0.5 shrink-0">
+              <div className="mt-0.5 shrink-0" aria-hidden="true">
                 {isCompleted ? (
                   <CheckCircleIcon size={18} className="text-emerald-600 dark:text-emerald-400" />
                 ) : isCurrent ? (
@@ -73,7 +83,7 @@ export function ProgressTimeline({
                   <h4
                     className={`text-sm font-medium ${
                       isCurrent
-                        ? "text-zinc-900 dark:text-zinc-100"
+                        ? "text-zinc-900 dark:text-zinc-100 font-semibold"
                         : isCompleted
                         ? "text-zinc-700 dark:text-zinc-300"
                         : "text-zinc-400 dark:text-zinc-600"

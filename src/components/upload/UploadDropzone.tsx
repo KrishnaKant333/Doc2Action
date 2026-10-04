@@ -106,13 +106,14 @@ export function UploadDropzone({
       role="button"
       tabIndex={0}
       aria-label="Upload document dropzone. Press Enter or Space to browse files, or drag and drop a document here."
+      aria-describedby="dropzone-instructions dropzone-constraints"
       onClick={triggerBrowse}
       onKeyDown={handleKeyDown}
       onDragEnter={handleDragEnter}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className={`relative group cursor-pointer rounded-xl border-2 border-dashed transition-all duration-200 p-8 sm:p-12 text-center select-none outline-none focus-visible:ring-2 focus-visible:ring-zinc-900 dark:focus-visible:ring-zinc-100 focus-visible:ring-offset-2 ${
+      className={`relative group cursor-pointer rounded-xl border-2 border-dashed transition-all duration-200 p-6 sm:p-12 text-center select-none outline-none focus-visible:ring-2 focus-visible:ring-zinc-900 dark:focus-visible:ring-zinc-100 focus-visible:ring-offset-2 ${
         isDragInvalid
           ? "border-amber-400 bg-amber-50/40 dark:border-amber-700 dark:bg-amber-950/20"
           : isDragOver
@@ -134,7 +135,7 @@ export function UploadDropzone({
       <div className="flex flex-col items-center justify-center space-y-4 max-w-sm mx-auto pointer-events-none">
         {/* Upload Icon Container */}
         <div
-          className={`flex h-14 w-14 items-center justify-center rounded-2xl transition-colors ${
+          className={`flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl transition-colors ${
             isDragInvalid
               ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
               : isDragOver
@@ -154,7 +155,10 @@ export function UploadDropzone({
               ? "Drop your document here"
               : "Upload a document"}
           </h3>
-          <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 leading-normal">
+          <p
+            id="dropzone-instructions"
+            className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 leading-normal"
+          >
             Drag and drop your document here, or{" "}
             <span className="font-medium text-zinc-900 dark:text-zinc-100 underline underline-offset-2">
               browse files
@@ -164,7 +168,10 @@ export function UploadDropzone({
 
         {/* Supported formats & constraint badge */}
         <div className="pt-2">
-          <span className="inline-flex items-center text-[11px] font-medium px-2.5 py-1 rounded-full bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 border border-zinc-200/80 dark:border-zinc-700/80">
+          <span
+            id="dropzone-constraints"
+            className="inline-flex items-center text-[11px] font-medium px-2.5 py-1 rounded-full bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 border border-zinc-200/80 dark:border-zinc-700/80"
+          >
             PDF • DOCX • TXT &nbsp;|&nbsp; Max 10 MB
           </span>
         </div>

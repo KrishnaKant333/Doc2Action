@@ -20,9 +20,9 @@ const variantStyles: Record<NonNullable<ButtonProps["variant"]>, string> = {
 };
 
 const sizeStyles: Record<NonNullable<ButtonProps["size"]>, string> = {
-  sm: "text-xs px-2.5 py-1.5 rounded-md gap-1.5 font-medium",
-  md: "text-sm px-4 py-2 rounded-lg gap-2 font-medium",
-  lg: "text-base px-5 py-2.5 rounded-lg gap-2.5 font-medium",
+  sm: "text-xs px-2.5 py-1.5 rounded-md gap-1.5 font-medium min-h-[32px]",
+  md: "text-sm px-4 py-2 rounded-lg gap-2 font-medium min-h-[38px]",
+  lg: "text-base px-5 py-2.5 rounded-lg gap-2.5 font-medium min-h-[44px]",
 };
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
@@ -39,7 +39,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const base =
-      "inline-flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none select-none cursor-pointer";
+      "inline-flex items-center justify-center transition-colors outline-none focus-visible:ring-2 focus-visible:ring-zinc-900 dark:focus-visible:ring-zinc-100 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none select-none cursor-pointer active:scale-[0.99]";
     const variantCls = variantStyles[variant];
     const sizeCls = sizeStyles[size];
 
