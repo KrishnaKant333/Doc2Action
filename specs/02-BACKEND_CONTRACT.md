@@ -1,15 +1,15 @@
 # Specification 02: Backend Contract
 
 **Project:** Document → Action Automator  
-**Status:** Conceptual Contract (Specific endpoints marked TBD)  
+**Status:** Conceptual Contract (Audit confirmed: Backend not yet implemented in repo)  
 
 ---
 
 ## 1. Overview
 
-This contract establishes the conceptual boundary between the Frontend client and the Backend / Document Processing service. 
+This contract establishes the boundary between the Frontend client and the Backend / Document Processing service. 
 
-To maintain velocity, the frontend is built against this conceptual contract using a mock adapter. When the backend service is deployed, only the communication layer will require configuration.
+As confirmed during the Phase 6 repository audit, **no backend API implementation, route handlers, or server files currently exist in the repository.** The frontend operates reliably using the mock simulation adapter ([src/lib/services/mockAnalysisService.ts](../src/lib/services/mockAnalysisService.ts)), ensuring the complete user flow (`Upload` $\rightarrow$ `Processing` $\rightarrow$ `Results Dashboard`) works end-to-end.
 
 ---
 
@@ -21,7 +21,7 @@ To maintain velocity, the frontend is built against this conceptual contract usi
 ```
 
 ### Input
-- **Payload:** User-uploaded document (binary file or multipart form data).
+- **Payload:** User-uploaded document (binary file sent via `multipart/form-data`).
 - **Metadata (Optional):** Original filename, MIME type, file size in bytes.
 
 ### Processing
@@ -30,7 +30,7 @@ To maintain velocity, the frontend is built against this conceptual contract usi
 - Rule / LLM-based parsing of dates, deadlines, and urgency.
 
 ### Output
-A structured document analysis object capable of representing:
+A structured document analysis object matching the domain models in [specs/04-DATA_MODEL.md](04-DATA_MODEL.md):
 - **Document Metadata:** Document ID, original name, page count/size, processed timestamp.
 - **Action Items:** List of discrete actionable tasks with title, description, deadline, priority, and category.
 - **Deadlines:** Explicit list or mapping of hard due dates.
@@ -41,22 +41,33 @@ A structured document analysis object capable of representing:
 
 ---
 
-## 3. Specifications (To Be Finalized by Backend Team)
+## 3. Specifications Audit Status (Phase 6 Findings)
 
-The following technical implementation details are currently **TBD**:
-
-| Specification Item | Current Status | Notes / Options |
+| Specification Item | Current Repo Status | Technical Recommendation / Notes |
 |---|---|---|
-| **API Endpoint URL** | **TBD** | E.g. `POST /api/v1/analyze` or Next.js Route Handler |
-| **Upload Mechanism** | **TBD** | `multipart/form-data` vs presigned S3/storage URL vs direct stream |
-| **Authentication** | **TBD** | None required for hackathon MVP |
-| **Max File Size** | **TBD** | Recommended: 10MB |
-| **Supported MIME Types** | **TBD** | Target: `application/pdf`, `text/plain`, `application/vnd.openxmlformats-officedocument.wordprocessingml.document` |
-| **Asynchronous vs Synchronous** | **TBD** | Direct request-response vs Job ID polling (`/api/v1/jobs/:id`) |
-| **Exact JSON Response Schema** | **TBD** | Will follow the domain models in [specs/04-DATA_MODEL.md](04-DATA_MODEL.md) |
+| **API Endpoint URL** | **TBD (Not implemented)** | Recommended: `POST /api/analyze` (Next.js Route Handler or external service) |
+| **Upload Mechanism** | **TBD (Not implemented)** | Recommended: `multipart/form-data` with field name `file` |
+| **Authentication** | **TBD (Not implemented)** | None required for hackathon MVP |
+| **Max File Size** | **Enforced on Client** | 10 MB client-side limit enforced in `src/components/upload/fileValidation.ts` |
+| **Supported MIME Types** | **Enforced on Client** | PDF, DOCX, TXT enforced in `fileValidation.ts` |
+| **Asynchronous vs Synchronous** | **TBD (Not implemented)** | Direct synchronous request-response recommended for MVP velocity |
+| **JSON Response Schema** | **TBD (Not implemented)** | Must map to `AnalysisResult` in `src/lib/types/action.ts` |
+| **Error Format** | **TBD (Not implemented)** | Recommended: `{ error: string }` with appropriate 4xx/5xx HTTP status code |
+| **Environment Variables** | **None present in repo** | E.g., `NEXT_PUBLIC_API_URL` if external server is deployed |
 
 ---
 
-## 4. Maintenance
+## 4. Domain Compatibility & Transformation
 
-This document must be updated and signed off collaboratively by frontend and backend engineers once backend architecture choices are finalized.
+The frontend is built to consume the TypeScript interface `AnalysisResult` directly:
+- If the backend returns camelCase keys matching `AnalysisResult`, **zero transformation is required**.
+- If the backend returns snake_case keys (e.g. `due_date`, `action_items`), a lightweight adapter mapping will convert them to `AnalysisResult` without modifying any UI components.
+
+---
+
+## 5. Maintenance & Next Steps
+
+Once the backend team commits API routes or documentation:
+1. Update Section 3 with the confirmed URL, HTTP method, and payload schema.
+2. Implement the API client in the frontend service layer without altering UI components.
+3. Test end-to-end integration with mock fallback.
