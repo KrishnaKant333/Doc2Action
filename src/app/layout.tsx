@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
+import { NavigationProvider } from "@/context/NavigationContext";
 import { Header } from "@/components/ui/header";
 import { InteractiveBackground } from "@/components/ui/InteractiveBackground";
 import { ScrollToTop } from "@/components/ui/ScrollToTop";
@@ -51,10 +52,12 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-[#04040a] text-zinc-100 font-sans relative selection:bg-[#e8ff47]/20 selection:text-[#e8ff47]">
         <InteractiveBackground />
-        <Header />
-        <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 relative z-10">
-          {children}
-        </main>
+        <NavigationProvider>
+          <Header />
+          <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 relative z-10">
+            {children}
+          </main>
+        </NavigationProvider>
         <ScrollToTop threshold={300} />
       </body>
     </html>
