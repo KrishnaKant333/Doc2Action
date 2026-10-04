@@ -46,16 +46,28 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 export async function simulateDocumentAnalysis(
   fileInfo: { name: string; sizeBytes: number; mimeType?: string },
   onProgress?: (update: ProgressUpdate) => void,
-  stepDelayMs = 600
+  stepDelayMs = 600,
+  signal?: AbortSignal
 ): Promise<AnalysisResult> {
   const steps: { status: ProcessingStatus; message: string; percent: number }[] = [
-    { status: "uploading", message: "Uploading document...", percent: 25 },
-    { status: "extracting", message: "Extracting text and structure...", percent: 50 },
+    { status: "uploading", message: "Uploading document to workspace...", percent: 25 },
+    { status: "extracting", message: "Extracting text and tables...", percent: 50 },
     { status: "analyzing", message: "Analyzing tasks, deadlines, and urgency...", percent: 75 },
-    { status: "generating_actions", message: "Generating action items and metrics...", percent: 95 },
+    { status: "generating_actions", message: "Structuring action items and metrics...", percent: 95 },
   ];
 
+  // Simulated error testing trigger (e.g., file with "corrupt" or "fail" in name)
+  const lowerName = fileInfo.name.toLowerCase();
+  if (lowerName.includes("corrupt") || lowerName.includes("fail")) {
+    await sleep(stepDelayMs);
+    throw new Error("We couldn't analyze this document. The file content could not be processed.");
+  }
+
   for (let i = 0; i < steps.length; i++) {
+    if (signal?.aborted) {
+      throw new Error("Analysis was cancelled by the user.");
+    }
+
     const step = steps[i];
     if (onProgress) {
       onProgress({
@@ -69,8 +81,11 @@ export async function simulateDocumentAnalysis(
     await sleep(stepDelayMs);
   }
 
+  if (signal?.aborted) {
+    throw new Error("Analysis was cancelled by the user.");
+  }
+
   // Pick matching sample result or fallback based on filename
-  const lowerName = fileInfo.name.toLowerCase();
   let baseResult: AnalysisResult;
 
   if (lowerName.includes("symposium") || lowerName.includes("paper") || lowerName.includes("conference")) {
