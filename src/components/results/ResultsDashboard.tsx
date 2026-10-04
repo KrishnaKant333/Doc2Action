@@ -1,7 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { AnalysisResult } from "../../lib/types/action";
+import {
+  AnalysisResult,
+  ActionItem,
+  DocumentMetadata,
+} from "../../lib/types/action";
 import { ActionCard } from "./ActionCard";
 import { Card, CardHeader, CardTitle, CardContent } from "../ui/card";
 import { Badge } from "../ui/badge";
@@ -23,6 +27,80 @@ export interface ResultsDashboardProps {
   className?: string;
 }
 
+export interface DocumentItemGroup<T> {
+  documentName: string;
+  items: T[];
+  isFallback?: boolean;
+}
+
+// Backwards-compatible interface for Phase 9
+export interface DocumentActionGroup extends DocumentItemGroup<ActionItem> {
+  actions: ActionItem[];
+}
+
+/**
+ * Generic helper that groups domain items (actions, deadlines, events) by their source document,
+ * strictly preserving the original upload batch order of `documents`.
+ * Items with unknown or missing sourceDocument are safely assigned to an "Other / Unassigned" fallback group.
+ */
+export function groupItemsByDocument<T extends { sourceDocument?: string }>(
+  items: T[],
+  documents?: DocumentMetadata[],
+  fallbackName = "Other / Unassigned"
+): DocumentItemGroup<T>[] {
+  const groups: DocumentItemGroup<T>[] = [];
+  const assignedItems = new Set<T>();
+
+  if (documents && documents.length > 0) {
+    for (const doc of documents) {
+      const docItems = items.filter((item) => item.sourceDocument === doc.name);
+      docItems.forEach((item) => assignedItems.add(item));
+      groups.push({
+        documentName: doc.name,
+        items: docItems,
+      });
+    }
+  } else {
+    // Fallback: derive distinct document names in appearance order
+    const seenDocs = new Set<string>();
+    for (const item of items) {
+      if (item.sourceDocument && !seenDocs.has(item.sourceDocument)) {
+        seenDocs.add(item.sourceDocument);
+        const docItems = items.filter((i) => i.sourceDocument === item.sourceDocument);
+        docItems.forEach((i) => assignedItems.add(i));
+        groups.push({
+          documentName: item.sourceDocument,
+          items: docItems,
+        });
+      }
+    }
+  }
+
+  // Capture items without a matching sourceDocument
+  const unassignedItems = items.filter((item) => !assignedItems.has(item));
+  if (unassignedItems.length > 0) {
+    groups.push({
+      documentName: fallbackName,
+      items: unassignedItems,
+      isFallback: true,
+    });
+  }
+
+  return groups;
+}
+
+// Backwards-compatible alias for Phase 9
+export const groupActionsByDocument = (
+  actions: ActionItem[],
+  documents?: DocumentMetadata[]
+): DocumentActionGroup[] => {
+  const genericGroups = groupItemsByDocument(actions, documents);
+  return genericGroups.map((g) => ({
+    ...g,
+    actions: g.items,
+  }));
+};
+
 export function ResultsDashboard({
   result,
   onReset,
@@ -41,6 +119,22 @@ export function ResultsDashboard({
   const hasDeadlines = deadlines && deadlines.length > 0;
   const hasEvents = events && events.length > 0;
   const hasNotes = importantNotes && importantNotes.length > 0;
+
+  // Group actions, deadlines, and events by source document when in batch mode
+  const documentGroups: DocumentActionGroup[] = React.useMemo(
+    () => (isBatch ? groupActionsByDocument(actions, documents) : []),
+    [actions, documents, isBatch]
+  );
+
+  const deadlineGroups = React.useMemo(
+    () => (isBatch ? groupItemsByDocument(deadlines, documents) : []),
+    [deadlines, documents, isBatch]
+  );
+
+  const eventGroups = React.useMemo(
+    () => (isBatch ? groupItemsByDocument(events, documents) : []),
+    [events, documents, isBatch]
+  );
 
   return (
     <div className={`space-y-8 animate-fade-in ${className}`}>
@@ -173,122 +267,374 @@ export function ResultsDashboard({
         </Card>
       ) : (
         /* 4. Action Items Section */
-        <section aria-label="Extracted action items" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
-                Action Items
-              </h2>
-              <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
-                {actions.length}
+        !isBatch ? (
+          <section aria-label="Extracted action items" className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
+                  Action Items
+                </h2>
+                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+                  {actions.length}
+                </span>
+              </div>
+              <span className="text-xs text-zinc-500 dark:text-zinc-400 hidden sm:inline">
+                Sorted by document order
               </span>
             </div>
-            <span className="text-xs text-zinc-500 dark:text-zinc-400 hidden sm:inline">
-              Sorted by document order
-            </span>
-          </div>
 
-          <div className="space-y-3">
-            {actions.map((action) => (
-              <ActionCard key={action.id} action={action} />
-            ))}
-          </div>
-        </section>
+            <div className="space-y-3">
+              {actions.map((action) => (
+                <ActionCard key={action.id} action={action} />
+              ))}
+            </div>
+          </section>
+        ) : (
+          <section aria-label="Action items grouped by document" className="space-y-6">
+            <div className="flex items-center justify-between border-b border-zinc-200/80 dark:border-zinc-800/80 pb-3">
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
+                  Action Items by Document
+                </h2>
+                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+                  {actions.length} total
+                </span>
+              </div>
+              <span className="text-xs text-zinc-500 dark:text-zinc-400 hidden sm:inline">
+                Grouped by source document
+              </span>
+            </div>
+
+            <div className="space-y-6">
+              {documentGroups.map((group, groupIdx) => {
+                const headingId = `action-doc-heading-${groupIdx}`;
+                const hasGroupActions = group.actions.length > 0;
+
+                return (
+                  <section
+                    key={`${group.documentName}-${groupIdx}`}
+                    aria-labelledby={headingId}
+                    className="space-y-3.5 rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 bg-zinc-50/50 dark:bg-zinc-900/40 p-4 sm:p-5 shadow-2xs"
+                  >
+                    {/* Document Heading */}
+                    <div className="flex items-center justify-between gap-3 flex-wrap border-b border-zinc-200/60 dark:border-zinc-800/60 pb-3">
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200/80 dark:border-zinc-700/80 shadow-2xs">
+                          <DocumentIcon size={16} />
+                        </div>
+                        <h3
+                          id={headingId}
+                          className="font-semibold text-sm sm:text-base text-zinc-900 dark:text-zinc-100 truncate max-w-xs sm:max-w-md"
+                          title={group.documentName}
+                        >
+                          {group.documentName}
+                        </h3>
+                      </div>
+
+                      <span className="text-xs font-medium px-2 py-0.5 rounded-md bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700/60 shrink-0">
+                        {hasGroupActions
+                          ? `${group.actions.length} action${group.actions.length > 1 ? "s" : ""}`
+                          : "0 actions"}
+                      </span>
+                    </div>
+
+                    {/* Action Cards or Empty Notice */}
+                    {hasGroupActions ? (
+                      <div className="space-y-3 pt-1">
+                        {group.actions.map((action) => (
+                          <ActionCard
+                            key={action.id}
+                            action={action}
+                            hideSourceDocument={!group.isFallback}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="py-5 px-4 rounded-lg border border-dashed border-zinc-200 dark:border-zinc-800 text-center text-xs text-zinc-500 dark:text-zinc-400 italic bg-white/40 dark:bg-zinc-900/40">
+                        No action items found in this document.
+                      </div>
+                    )}
+                  </section>
+                );
+              })}
+            </div>
+          </section>
+        )
       )}
 
       {/* 5. Deadlines & Events Dual Section */}
       {(hasDeadlines || hasEvents) && (
-        <section
-          aria-label="Deadlines and events"
-          className={`grid gap-6 ${
-            hasDeadlines && hasEvents ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1"
-          }`}
-        >
-          {/* Upcoming Deadlines */}
-          {hasDeadlines && (
-            <Card>
-              <CardHeader className="p-4 sm:p-5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <CalendarIcon size={16} className="text-zinc-500" />
-                    <CardTitle className="text-base font-semibold">
-                      Upcoming Deadlines
-                    </CardTitle>
-                  </div>
-                  <span className="text-xs font-medium text-zinc-500">
-                    {deadlines.length}
-                  </span>
-                </div>
-              </CardHeader>
-              <CardContent className="p-4 sm:p-5 space-y-3">
-                {deadlines.map((dl) => (
-                  <div
-                    key={dl.id}
-                    className="flex items-start justify-between gap-3 p-3 rounded-lg border border-zinc-100 dark:border-zinc-800/80 bg-zinc-50/50 dark:bg-zinc-800/30 text-xs"
-                  >
-                    <div className="space-y-0.5 min-w-0">
-                      <p className="font-semibold text-zinc-900 dark:text-zinc-100 truncate">
-                        {dl.title}
-                      </p>
-                      <p className="text-zinc-500 dark:text-zinc-400 font-mono">
-                        {dl.dueDate}
-                      </p>
+        !isBatch ? (
+          <section
+            aria-label="Deadlines and events"
+            className={`grid gap-6 ${
+              hasDeadlines && hasEvents ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1"
+            }`}
+          >
+            {/* Upcoming Deadlines (Single Document View) */}
+            {hasDeadlines && (
+              <Card>
+                <CardHeader className="p-4 sm:p-5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <CalendarIcon size={16} className="text-zinc-500" />
+                      <CardTitle className="text-base font-semibold">
+                        Upcoming Deadlines
+                      </CardTitle>
                     </div>
-                    {dl.isStrict && (
-                      <Badge variant="high" className="shrink-0 text-[10px]">
-                        Strict
-                      </Badge>
-                    )}
+                    <span className="text-xs font-medium text-zinc-500">
+                      {deadlines.length}
+                    </span>
                   </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Scheduled Events */}
-          {hasEvents && (
-            <Card>
-              <CardHeader className="p-4 sm:p-5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <ClockIcon size={16} className="text-zinc-500" />
-                    <CardTitle className="text-base font-semibold">
-                      Key Events & Dates
-                    </CardTitle>
-                  </div>
-                  <span className="text-xs font-medium text-zinc-500">
-                    {events.length}
-                  </span>
-                </div>
-              </CardHeader>
-              <CardContent className="p-4 sm:p-5 space-y-3">
-                {events.map((ev) => (
-                  <div
-                    key={ev.id}
-                    className="p-3 rounded-lg border border-zinc-100 dark:border-zinc-800/80 bg-zinc-50/50 dark:bg-zinc-800/30 space-y-1 text-xs"
-                  >
-                    <p className="font-semibold text-zinc-900 dark:text-zinc-100">
-                      {ev.title}
-                    </p>
-                    <div className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400 flex-wrap">
-                      <span className="inline-flex items-center gap-1 font-mono">
-                        <CalendarIcon size={12} /> {ev.date}
-                      </span>
-                      {ev.location && (
-                        <>
-                          <span>•</span>
-                          <span className="inline-flex items-center gap-1">
-                            <MapPinIcon size={12} /> {ev.location}
-                          </span>
-                        </>
+                </CardHeader>
+                <CardContent className="p-4 sm:p-5 space-y-3">
+                  {deadlines.map((dl) => (
+                    <div
+                      key={dl.id}
+                      className="flex items-start justify-between gap-3 p-3 rounded-lg border border-zinc-100 dark:border-zinc-800/80 bg-zinc-50/50 dark:bg-zinc-800/30 text-xs"
+                    >
+                      <div className="space-y-0.5 min-w-0">
+                        <p className="font-semibold text-zinc-900 dark:text-zinc-100 truncate">
+                          {dl.title}
+                        </p>
+                        <p className="text-zinc-500 dark:text-zinc-400 font-mono">
+                          {dl.dueDate}
+                        </p>
+                      </div>
+                      {dl.isStrict && (
+                        <Badge variant="high" className="shrink-0 text-[10px]">
+                          Strict
+                        </Badge>
                       )}
                     </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Scheduled Events (Single Document View) */}
+            {hasEvents && (
+              <Card>
+                <CardHeader className="p-4 sm:p-5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <ClockIcon size={16} className="text-zinc-500" />
+                      <CardTitle className="text-base font-semibold">
+                        Key Events & Dates
+                      </CardTitle>
+                    </div>
+                    <span className="text-xs font-medium text-zinc-500">
+                      {events.length}
+                    </span>
                   </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
-        </section>
+                </CardHeader>
+                <CardContent className="p-4 sm:p-5 space-y-3">
+                  {events.map((ev) => (
+                    <div
+                      key={ev.id}
+                      className="p-3 rounded-lg border border-zinc-100 dark:border-zinc-800/80 bg-zinc-50/50 dark:bg-zinc-800/30 space-y-1 text-xs"
+                    >
+                      <p className="font-semibold text-zinc-900 dark:text-zinc-100">
+                        {ev.title}
+                      </p>
+                      <div className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400 flex-wrap">
+                        <span className="inline-flex items-center gap-1 font-mono">
+                          <CalendarIcon size={12} /> {ev.date}
+                        </span>
+                        {ev.location && (
+                          <>
+                            <span>•</span>
+                            <span className="inline-flex items-center gap-1">
+                              <MapPinIcon size={12} /> {ev.location}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+          </section>
+        ) : (
+          <section
+            aria-label="Deadlines and events grouped by document"
+            className={`grid gap-8 ${
+              hasDeadlines && hasEvents ? "grid-cols-1 lg:grid-cols-2" : "grid-cols-1"
+            }`}
+          >
+            {/* Upcoming Deadlines by Document */}
+            {hasDeadlines && (
+              <section aria-label="Upcoming deadlines grouped by document" className="space-y-4">
+                <div className="flex items-center justify-between border-b border-zinc-200/80 dark:border-zinc-800/80 pb-3">
+                  <div className="flex items-center gap-2">
+                    <CalendarIcon size={18} className="text-zinc-500" />
+                    <h2 className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
+                      Upcoming Deadlines by Document
+                    </h2>
+                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+                      {deadlines.length} total
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  {deadlineGroups.map((group, idx) => {
+                    const headingId = `deadline-doc-heading-${idx}`;
+                    const hasItems = group.items.length > 0;
+
+                    return (
+                      <section
+                        key={`${group.documentName}-${idx}`}
+                        aria-labelledby={headingId}
+                        className="space-y-3 rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 bg-zinc-50/50 dark:bg-zinc-900/40 p-4 sm:p-5 shadow-2xs"
+                      >
+                        {/* Document Heading */}
+                        <div className="flex items-center justify-between gap-3 flex-wrap border-b border-zinc-200/60 dark:border-zinc-800/60 pb-3">
+                          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200/80 dark:border-zinc-700/80 shadow-2xs">
+                              <DocumentIcon size={16} />
+                            </div>
+                            <h3
+                              id={headingId}
+                              className="font-semibold text-sm sm:text-base text-zinc-900 dark:text-zinc-100 truncate max-w-xs sm:max-w-md"
+                              title={group.documentName}
+                            >
+                              {group.documentName}
+                            </h3>
+                          </div>
+
+                          <span className="text-xs font-medium px-2 py-0.5 rounded-md bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700/60 shrink-0">
+                            {hasItems
+                              ? `${group.items.length} deadline${group.items.length > 1 ? "s" : ""}`
+                              : "0 deadlines"}
+                          </span>
+                        </div>
+
+                        {/* Items or Empty Note */}
+                        {hasItems ? (
+                          <div className="space-y-2.5 pt-1">
+                            {group.items.map((dl) => (
+                              <div
+                                key={dl.id}
+                                className="flex items-start justify-between gap-3 p-3 rounded-lg border border-zinc-100 dark:border-zinc-800/80 bg-white dark:bg-zinc-900 text-xs shadow-2xs"
+                              >
+                                <div className="space-y-0.5 min-w-0">
+                                  <p className="font-semibold text-zinc-900 dark:text-zinc-100 truncate">
+                                    {dl.title}
+                                  </p>
+                                  <p className="text-zinc-500 dark:text-zinc-400 font-mono">
+                                    {dl.dueDate}
+                                  </p>
+                                </div>
+                                {dl.isStrict && (
+                                  <Badge variant="high" className="shrink-0 text-[10px]">
+                                    Strict
+                                  </Badge>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="py-4 px-3 rounded-lg border border-dashed border-zinc-200 dark:border-zinc-800 text-center text-xs text-zinc-500 dark:text-zinc-400 italic bg-white/40 dark:bg-zinc-900/40">
+                            No upcoming deadlines found in this document.
+                          </div>
+                        )}
+                      </section>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
+
+            {/* Key Events & Dates by Document */}
+            {hasEvents && (
+              <section aria-label="Key events and dates grouped by document" className="space-y-4">
+                <div className="flex items-center justify-between border-b border-zinc-200/80 dark:border-zinc-800/80 pb-3">
+                  <div className="flex items-center gap-2">
+                    <ClockIcon size={18} className="text-zinc-500" />
+                    <h2 className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
+                      Key Events & Dates by Document
+                    </h2>
+                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+                      {events.length} total
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  {eventGroups.map((group, idx) => {
+                    const headingId = `event-doc-heading-${idx}`;
+                    const hasItems = group.items.length > 0;
+
+                    return (
+                      <section
+                        key={`${group.documentName}-${idx}`}
+                        aria-labelledby={headingId}
+                        className="space-y-3 rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 bg-zinc-50/50 dark:bg-zinc-900/40 p-4 sm:p-5 shadow-2xs"
+                      >
+                        {/* Document Heading */}
+                        <div className="flex items-center justify-between gap-3 flex-wrap border-b border-zinc-200/60 dark:border-zinc-800/60 pb-3">
+                          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200/80 dark:border-zinc-700/80 shadow-2xs">
+                              <DocumentIcon size={16} />
+                            </div>
+                            <h3
+                              id={headingId}
+                              className="font-semibold text-sm sm:text-base text-zinc-900 dark:text-zinc-100 truncate max-w-xs sm:max-w-md"
+                              title={group.documentName}
+                            >
+                              {group.documentName}
+                            </h3>
+                          </div>
+
+                          <span className="text-xs font-medium px-2 py-0.5 rounded-md bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700/60 shrink-0">
+                            {hasItems
+                              ? `${group.items.length} event${group.items.length > 1 ? "s" : ""}`
+                              : "0 events"}
+                          </span>
+                        </div>
+
+                        {/* Items or Empty Note */}
+                        {hasItems ? (
+                          <div className="space-y-2.5 pt-1">
+                            {group.items.map((ev) => (
+                              <div
+                                key={ev.id}
+                                className="p-3 rounded-lg border border-zinc-100 dark:border-zinc-800/80 bg-white dark:bg-zinc-900 space-y-1 text-xs shadow-2xs"
+                              >
+                                <p className="font-semibold text-zinc-900 dark:text-zinc-100">
+                                  {ev.title}
+                                </p>
+                                <div className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400 flex-wrap">
+                                  <span className="inline-flex items-center gap-1 font-mono">
+                                    <CalendarIcon size={12} /> {ev.date}
+                                  </span>
+                                  {ev.location && (
+                                    <>
+                                      <span>•</span>
+                                      <span className="inline-flex items-center gap-1">
+                                        <MapPinIcon size={12} /> {ev.location}
+                                      </span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="py-4 px-3 rounded-lg border border-dashed border-zinc-200 dark:border-zinc-800 text-center text-xs text-zinc-500 dark:text-zinc-400 italic bg-white/40 dark:bg-zinc-900/40">
+                            No key events or dates found in this document.
+                          </div>
+                        )}
+                      </section>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
+          </section>
+        )
       )}
 
       {/* 6. Important Notes & Guidelines */}

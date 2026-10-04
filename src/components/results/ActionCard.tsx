@@ -8,9 +8,14 @@ import { CalendarIcon, DocumentIcon } from "../ui/icons";
 export interface ActionCardProps {
   action: ActionItem;
   className?: string;
+  hideSourceDocument?: boolean;
 }
 
-export function ActionCard({ action, className = "" }: ActionCardProps) {
+export function ActionCard({
+  action,
+  className = "",
+  hideSourceDocument = false,
+}: ActionCardProps) {
   return (
     <article
       className={`rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 sm:p-5 space-y-3 shadow-xs transition-colors hover:border-zinc-300 dark:hover:border-zinc-700 ${className}`}
@@ -37,8 +42,8 @@ export function ActionCard({ action, className = "" }: ActionCardProps) {
         </div>
       )}
 
-      {/* Source Document Tag if available */}
-      {action.sourceDocument && (
+      {/* Source Document Tag if available and not hidden by group header */}
+      {!hideSourceDocument && action.sourceDocument && (
         <div className="flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400 font-medium">
           <DocumentIcon size={13} className="text-zinc-400 dark:text-zinc-500 shrink-0" />
           <span>

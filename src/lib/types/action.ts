@@ -57,6 +57,7 @@ export interface Deadline {
   title: string;
   dueDate: string;
   isStrict?: boolean;
+  sourceDocument?: string;
 }
 
 // Confirmed: Event entry
@@ -65,6 +66,7 @@ export interface Event {
   title: string;
   date: string;
   location?: string;
+  sourceDocument?: string;
 }
 
 // Confirmed: High-level metric summary for dashboard
