@@ -267,3 +267,45 @@ export async function updateActionStatus(
     return false;
   }
 }
+
+/**
+ * Bulk updates action items' status.
+ */
+export async function bulkUpdateActionStatus(
+  ids: string[],
+  status: "pending" | "completed",
+  all = false
+): Promise<boolean> {
+  try {
+    const res = await fetch("/api/actions", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids, status, all }),
+    });
+    return res.ok;
+  } catch (error) {
+    console.error("Failed to bulk update actions:", error);
+    return false;
+  }
+}
+
+/**
+ * Bulk deletes action items.
+ */
+export async function bulkDeleteActions(
+  ids: string[],
+  all = false
+): Promise<boolean> {
+  try {
+    const res = await fetch("/api/actions", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids, all }),
+    });
+    return res.ok;
+  } catch (error) {
+    console.error("Failed to bulk delete actions:", error);
+    return false;
+  }
+}
+
