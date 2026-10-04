@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { AnalysisResult } from "../../lib/types/action";
+import { AnalysisResult, ActionItem, DocumentMetadata } from "../../lib/types/action";
 import { ActionCard } from "./ActionCard";
 import { Card, CardHeader, CardTitle, CardContent } from "../ui/card";
 import { Badge } from "../ui/badge";
@@ -23,6 +23,61 @@ export interface ResultsDashboardProps {
   className?: string;
 }
 
+export interface DocumentActionGroup {
+  documentName: string;
+  actions: ActionItem[];
+  isFallback?: boolean;
+}
+
+/**
+ * Groups actions by their source document preserving the batch document upload order.
+ * Actions with unknown or missing sourceDocument are assigned to a fallback group.
+ */
+export function groupActionsByDocument(
+  actions: ActionItem[],
+  documents?: DocumentMetadata[]
+): DocumentActionGroup[] {
+  const groups: DocumentActionGroup[] = [];
+  const assignedActionIds = new Set<string>();
+
+  if (documents && documents.length > 0) {
+    for (const doc of documents) {
+      const docActions = actions.filter((act) => act.sourceDocument === doc.name);
+      docActions.forEach((act) => assignedActionIds.add(act.id));
+      groups.push({
+        documentName: doc.name,
+        actions: docActions,
+      });
+    }
+  } else {
+    // Fallback: derive distinct document names in appearance order
+    const seenDocs = new Set<string>();
+    for (const act of actions) {
+      if (act.sourceDocument && !seenDocs.has(act.sourceDocument)) {
+        seenDocs.add(act.sourceDocument);
+        const docActions = actions.filter((a) => a.sourceDocument === act.sourceDocument);
+        docActions.forEach((a) => assignedActionIds.add(a.id));
+        groups.push({
+          documentName: act.sourceDocument,
+          actions: docActions,
+        });
+      }
+    }
+  }
+
+  // Capture actions without a matching sourceDocument
+  const unassignedActions = actions.filter((act) => !assignedActionIds.has(act.id));
+  if (unassignedActions.length > 0) {
+    groups.push({
+      documentName: "Other / Unassigned",
+      actions: unassignedActions,
+      isFallback: true,
+    });
+  }
+
+  return groups;
+}
+
 export function ResultsDashboard({
   result,
   onReset,
@@ -41,6 +96,12 @@ export function ResultsDashboard({
   const hasDeadlines = deadlines && deadlines.length > 0;
   const hasEvents = events && events.length > 0;
   const hasNotes = importantNotes && importantNotes.length > 0;
+
+  // Group actions by source document when in batch mode
+  const documentGroups = React.useMemo(
+    () => (isBatch ? groupActionsByDocument(actions, documents) : []),
+    [actions, documents, isBatch]
+  );
 
   return (
     <div className={`space-y-8 animate-fade-in ${className}`}>
@@ -173,27 +234,99 @@ export function ResultsDashboard({
         </Card>
       ) : (
         /* 4. Action Items Section */
-        <section aria-label="Extracted action items" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
-                Action Items
-              </h2>
-              <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
-                {actions.length}
+        !isBatch ? (
+          <section aria-label="Extracted action items" className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
+                  Action Items
+                </h2>
+                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+                  {actions.length}
+                </span>
+              </div>
+              <span className="text-xs text-zinc-500 dark:text-zinc-400 hidden sm:inline">
+                Sorted by document order
               </span>
             </div>
-            <span className="text-xs text-zinc-500 dark:text-zinc-400 hidden sm:inline">
-              Sorted by document order
-            </span>
-          </div>
 
-          <div className="space-y-3">
-            {actions.map((action) => (
-              <ActionCard key={action.id} action={action} />
-            ))}
-          </div>
-        </section>
+            <div className="space-y-3">
+              {actions.map((action) => (
+                <ActionCard key={action.id} action={action} />
+              ))}
+            </div>
+          </section>
+        ) : (
+          <section aria-label="Action items grouped by document" className="space-y-6">
+            <div className="flex items-center justify-between border-b border-zinc-200/80 dark:border-zinc-800/80 pb-3">
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
+                  Action Items by Document
+                </h2>
+                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+                  {actions.length} total
+                </span>
+              </div>
+              <span className="text-xs text-zinc-500 dark:text-zinc-400 hidden sm:inline">
+                Grouped by source document
+              </span>
+            </div>
+
+            <div className="space-y-6">
+              {documentGroups.map((group, groupIdx) => {
+                const headingId = `doc-heading-${groupIdx}`;
+                const hasGroupActions = group.actions.length > 0;
+
+                return (
+                  <section
+                    key={`${group.documentName}-${groupIdx}`}
+                    aria-labelledby={headingId}
+                    className="space-y-3.5 rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 bg-zinc-50/50 dark:bg-zinc-900/40 p-4 sm:p-5 shadow-2xs"
+                  >
+                    {/* Document Heading */}
+                    <div className="flex items-center justify-between gap-3 flex-wrap border-b border-zinc-200/60 dark:border-zinc-800/60 pb-3">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200/80 dark:border-zinc-700/80 shadow-2xs">
+                          <DocumentIcon size={16} />
+                        </div>
+                        <h3
+                          id={headingId}
+                          className="font-semibold text-sm sm:text-base text-zinc-900 dark:text-zinc-100 truncate max-w-xs sm:max-w-md"
+                          title={group.documentName}
+                        >
+                          {group.documentName}
+                        </h3>
+                      </div>
+
+                      <span className="text-xs font-medium px-2 py-0.5 rounded-md bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700/60">
+                        {hasGroupActions
+                          ? `${group.actions.length} action${group.actions.length > 1 ? "s" : ""}`
+                          : "0 actions"}
+                      </span>
+                    </div>
+
+                    {/* Action Cards or Empty Notice */}
+                    {hasGroupActions ? (
+                      <div className="space-y-3 pt-1">
+                        {group.actions.map((action) => (
+                          <ActionCard
+                            key={action.id}
+                            action={action}
+                            hideSourceDocument={!group.isFallback}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="py-5 px-4 rounded-lg border border-dashed border-zinc-200 dark:border-zinc-800 text-center text-xs text-zinc-500 dark:text-zinc-400 italic bg-white/40 dark:bg-zinc-900/40">
+                        No action items found in this document.
+                      </div>
+                    )}
+                  </section>
+                );
+              })}
+            </div>
+          </section>
+        )
       )}
 
       {/* 5. Deadlines & Events Dual Section */}
