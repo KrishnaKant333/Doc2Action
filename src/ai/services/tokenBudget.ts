@@ -16,9 +16,27 @@ export class TokenRateLimiter {
   private records: UsageRecord[] = [];
   private inFlightTokens = 0;
 
+  private providerResetTime: number | null = null;
+  private providerRemainingTokens: number | null = null;
+
   constructor(maxTpm = 7000, windowMs = 60000) {
     this.maxTpm = maxTpm;
     this.windowMs = windowMs;
+  }
+
+  /**
+   * Updates provider token limit telemetry from official response headers.
+   */
+  public updateProviderCapacity(
+    remainingTokens: number | null,
+    resetMs: number | null
+  ): void {
+    if (remainingTokens !== null) {
+      this.providerRemainingTokens = remainingTokens;
+    }
+    if (resetMs !== null) {
+      this.providerResetTime = Date.now() + resetMs;
+    }
   }
 
   /**
@@ -52,7 +70,7 @@ export class TokenRateLimiter {
 
   /**
    * Checks whether the upcoming request can proceed immediately without exceeding the TPM limit.
-   * If budget is insufficient, calculates the exact future time when enough records will have expired.
+   * Leverages official provider reset headers to prevent unnecessary full 60-second pauses.
    */
   public async waitForBudget(estimatedTokens: number): Promise<void> {
     while (true) {
@@ -60,20 +78,38 @@ export class TokenRateLimiter {
       this.cleanExpired(now);
       const effectiveUsage = this.getEffectiveUsage(now);
 
+      // If provider has reset capacity and reports plenty of remaining tokens, proceed
+      const providerCapacityAvailable =
+        this.providerRemainingTokens !== null &&
+        this.providerRemainingTokens >= estimatedTokens + 500 &&
+        (this.providerResetTime === null || now >= this.providerResetTime);
+
       // Print debug trace of active window entries
       console.log(
         `[TokenRateLimiter] Budget check: Request=${estimatedTokens}, InFlight=${this.inFlightTokens}, WindowUsage=${this.getCurrentUsage(
           now
-        )}, Effective=${effectiveUsage} / Max=${this.maxTpm}`
+        )}, Effective=${effectiveUsage} / Max=${this.maxTpm} (ProviderRemaining=${
+          this.providerRemainingTokens ?? "unknown"
+        })`
       );
 
       // If request fits in budget, or there are no historical records to wait for, proceed
-      if (effectiveUsage + estimatedTokens <= this.maxTpm || this.records.length === 0) {
+      if (
+        effectiveUsage + estimatedTokens <= this.maxTpm ||
+        this.records.length === 0 ||
+        providerCapacityAvailable
+      ) {
         this.inFlightTokens += estimatedTokens;
+        if (this.providerRemainingTokens !== null) {
+          this.providerRemainingTokens = Math.max(
+            0,
+            this.providerRemainingTokens - estimatedTokens
+          );
+        }
         return;
       }
 
-      // Calculate how many tokens must expire to make room
+      // Calculate how many tokens must expire to make room from window
       const tokensToFree = effectiveUsage + estimatedTokens - this.maxTpm;
       let freed = 0;
       let targetExpiryTime = now;
@@ -89,14 +125,26 @@ export class TokenRateLimiter {
         }
       }
 
-      const waitTimeMs = Math.max(200, targetExpiryTime - now + 50);
+      // Check if provider reset header reports a shorter wait time
+      let waitTimeMs = Math.max(200, targetExpiryTime - now + 50);
+      if (this.providerResetTime && this.providerResetTime > now) {
+        const providerWait = this.providerResetTime - now + 100;
+        if (providerWait < waitTimeMs) {
+          console.log(
+            `[TokenRateLimiter] Using provider reset header (${Math.ceil(
+              providerWait / 1000
+            )}s) instead of full window wait (${Math.ceil(waitTimeMs / 1000)}s)`
+          );
+          waitTimeMs = Math.max(200, providerWait);
+        }
+      }
 
       console.warn(
         `[TokenRateLimiter] TPM approaching limit (${effectiveUsage} + ${estimatedTokens} > ${
           this.maxTpm
         }). Pausing for ${Math.ceil(
           waitTimeMs / 1000
-        )}s to let ${freed} tokens expire from rolling window...`
+        )}s before starting next chunk...`
       );
 
       await new Promise((resolve) => setTimeout(resolve, waitTimeMs));
@@ -130,6 +178,9 @@ export class TokenRateLimiter {
    */
   public releaseReservation(estimatedReserved: number): void {
     this.inFlightTokens = Math.max(0, this.inFlightTokens - estimatedReserved);
+    if (this.providerRemainingTokens !== null) {
+      this.providerRemainingTokens += estimatedReserved;
+    }
   }
 
   /**
@@ -138,6 +189,8 @@ export class TokenRateLimiter {
   public reset(): void {
     this.records = [];
     this.inFlightTokens = 0;
+    this.providerResetTime = null;
+    this.providerRemainingTokens = null;
   }
 }
 
