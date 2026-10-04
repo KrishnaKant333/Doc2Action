@@ -4,7 +4,7 @@ import * as React from "react";
 import { AnalysisResult, ProcessingStatus } from "../../lib/types/action";
 import { simulateDocumentAnalysis, ProgressUpdate } from "../../lib/services/mockAnalysisService";
 import { ProgressTimeline } from "../ui/progress-indicator";
-import { DocumentIcon, AlertCircleIcon, XIcon, CheckCircleIcon } from "../ui/icons";
+import { DocumentIcon, AlertCircleIcon, XIcon, CheckCircleIcon, ArrowLeftIcon } from "../ui/icons";
 import { Button } from "../ui/button";
 import { formatFileSize, getFileTypeLabel } from "../upload/fileValidation";
 
@@ -109,7 +109,20 @@ export function ProcessingScreen({
   const formattedTotalSize = formatFileSize(totalSize);
 
   return (
-    <div className={`w-full max-w-xl mx-auto space-y-8 ${className}`}>
+    <div className={`w-full max-w-xl mx-auto space-y-6 ${className}`}>
+      {/* Back to Upload Navigation Button */}
+      <div className="flex items-center justify-start">
+        <button
+          type="button"
+          onClick={handleCancelClick}
+          aria-label="Back to Upload"
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#0c0d16]/80 hover:bg-[#121422]/95 text-zinc-400 hover:text-zinc-100 backdrop-blur-md border border-white/[0.08] hover:border-white/[0.18] shadow-xs text-xs sm:text-sm font-medium transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#e8ff47] focus-visible:ring-offset-2 focus-visible:ring-offset-[#04040a] group"
+        >
+          <ArrowLeftIcon size={14} className="transition-transform duration-200 group-hover:-translate-x-0.5" />
+          <span>Back to Upload</span>
+        </button>
+      </div>
+
       {/* Active Document Header / Batch Summary Card */}
       <div className="p-4 sm:p-5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs space-y-3">
         <div className="flex items-center justify-between gap-4">

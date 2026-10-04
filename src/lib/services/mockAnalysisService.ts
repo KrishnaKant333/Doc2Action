@@ -47,7 +47,21 @@ export const PROCESSING_STEPS: ProcessingStepDescriptor[] = [
 
 export type FileInputInfo = { name: string; sizeBytes: number; mimeType?: string };
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const sleep = (ms: number, signal?: AbortSignal) =>
+  new Promise<void>((resolve, reject) => {
+    if (signal?.aborted) {
+      return reject(new Error("Analysis was cancelled by the user."));
+    }
+    const timer = setTimeout(() => {
+      signal?.removeEventListener("abort", onAbort);
+      resolve();
+    }, ms);
+    const onAbort = () => {
+      clearTimeout(timer);
+      reject(new Error("Analysis was cancelled by the user."));
+    };
+    signal?.addEventListener("abort", onAbort, { once: true });
+  });
 
 /**
  * Simulates document analysis through the 4 core stages with timed progress callbacks.
@@ -99,7 +113,7 @@ export async function simulateDocumentAnalysis(
     (f) => f.name.toLowerCase().includes("corrupt") || f.name.toLowerCase().includes("fail")
   );
   if (corruptFile) {
-    await sleep(stepDelayMs);
+    await sleep(stepDelayMs, signal);
     throw new Error(
       `We couldn't analyze "${corruptFile.name}". The file content could not be processed.`
     );
@@ -120,7 +134,7 @@ export async function simulateDocumentAnalysis(
         message: step.message,
       });
     }
-    await sleep(stepDelayMs);
+    await sleep(stepDelayMs, signal);
   }
 
   if (signal?.aborted) {
