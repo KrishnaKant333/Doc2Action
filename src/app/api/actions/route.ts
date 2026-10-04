@@ -111,3 +111,78 @@ export async function GET(request: Request) {
     );
   }
 }
+
+export async function PATCH(request: Request) {
+  try {
+    const { workspaceId } = await resolveWorkspace(request);
+    const body = await request.json().catch(() => ({}));
+    const { ids, all, status } = body;
+
+    if (!status || !["pending", "completed", "in_progress"].includes(status)) {
+      return Response.json({ success: false, error: "Invalid status" }, { status: 400 });
+    }
+
+    if (process.env.DATABASE_URL) {
+      if (all) {
+        await prisma.actionItem.updateMany({
+          where: { workspaceId },
+          data: {
+            status,
+            completedAt: status === "completed" ? new Date() : null,
+          },
+        });
+      } else if (Array.isArray(ids) && ids.length > 0) {
+        await prisma.actionItem.updateMany({
+          where: {
+            workspaceId,
+            id: { in: ids },
+          },
+          data: {
+            status,
+            completedAt: status === "completed" ? new Date() : null,
+          },
+        });
+      }
+    }
+
+    return Response.json({ success: true });
+  } catch (error) {
+    console.error("Failed to bulk update actions:", error);
+    return Response.json(
+      { success: false, error: "Failed to update actions" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const { workspaceId } = await resolveWorkspace(request);
+    const body = await request.json().catch(() => ({}));
+    const { ids, all } = body;
+
+    if (process.env.DATABASE_URL) {
+      if (all) {
+        await prisma.actionItem.deleteMany({
+          where: { workspaceId },
+        });
+      } else if (Array.isArray(ids) && ids.length > 0) {
+        await prisma.actionItem.deleteMany({
+          where: {
+            workspaceId,
+            id: { in: ids },
+          },
+        });
+      }
+    }
+
+    return Response.json({ success: true });
+  } catch (error) {
+    console.error("Failed to delete actions:", error);
+    return Response.json(
+      { success: false, error: "Failed to delete actions" },
+      { status: 500 }
+    );
+  }
+}
+
