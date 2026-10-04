@@ -9,7 +9,6 @@ import {
 import { ActionCard } from "./ActionCard";
 import { Card, CardHeader, CardTitle, CardContent } from "../ui/card";
 import { Badge } from "../ui/badge";
-import { Button } from "../ui/button";
 import {
   DocumentIcon,
   CheckCircleIcon,
@@ -141,9 +140,9 @@ export function ResultsDashboard({
   return (
     <div className={`space-y-8 animate-fade-in ${className}`}>
       {/* 1. Document Summary & Top Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-5 rounded-xl border border-[rgba(140,170,120,0.14)] bg-[#0b120d] shadow-xs">
         <div className="flex items-start sm:items-center gap-3.5 min-w-0 flex-1">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200 border border-zinc-200/60 dark:border-zinc-700/60">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#0e1911] text-zinc-200 border border-[rgba(140,170,120,0.15)]">
             <DocumentIcon size={22} />
           </div>
           <div className="min-w-0 flex-1">
@@ -154,7 +153,7 @@ export function ResultsDashboard({
               >
                 {isBatch ? `${docCount} Documents analyzed` : document.name}
               </h1>
-              <span className="text-[11px] font-medium font-mono px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700 shrink-0">
+              <span className="text-[11px] font-medium font-mono px-1.5 py-0.5 rounded bg-[#0e1911] text-zinc-400 border border-[rgba(140,170,120,0.15)] shrink-0">
                 {isBatch ? "Batch" : typeLabel}
               </span>
             </div>
@@ -166,12 +165,12 @@ export function ResultsDashboard({
               </span>
             </div>
             {isBatch && documents && (
-              <div className="flex items-center gap-1.5 flex-wrap pt-2 mt-2 border-t border-zinc-100 dark:border-zinc-800/80">
+              <div className="flex items-center gap-1.5 flex-wrap pt-2 mt-2 border-t border-[rgba(140,170,120,0.12)]">
                 <span className="text-[11px] text-zinc-400">Sources:</span>
                 {documents.map((d) => (
                   <span
                     key={d.id}
-                    className="text-[11px] font-mono px-2 py-0.5 rounded bg-zinc-50 dark:bg-zinc-800/60 text-zinc-700 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700/60 truncate max-w-[200px]"
+                    className="text-[11px] font-mono px-2 py-0.5 rounded bg-[#0e1911] text-zinc-300 border border-[rgba(140,170,120,0.15)] truncate max-w-[200px]"
                     title={d.name}
                   >
                     {d.name}
@@ -183,16 +182,14 @@ export function ResultsDashboard({
         </div>
 
         <div className="self-end sm:self-center shrink-0">
-          <Button
+          <button
             type="button"
-            variant="outline"
-            size="sm"
             onClick={onReset}
-            className="text-xs"
+            className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#e8ff47]/[0.06] hover:bg-[#e8ff47]/[0.12] text-zinc-200 hover:text-white border border-[#e8ff47]/20 hover:border-[#e8ff47]/40 backdrop-blur-md text-xs font-medium transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#e8ff47] focus-visible:ring-offset-2 focus-visible:ring-offset-[#04040a] active:scale-[0.99]"
             aria-label="Analyze another document"
           >
-            Analyze another document
-          </Button>
+            <span>Analyze another document</span>
+          </button>
         </div>
       </div>
 
@@ -245,7 +242,7 @@ export function ResultsDashboard({
           </div>
         </Card>
 
-        <Card className="p-3.5 sm:p-5">
+        <Card className="p-3.5 sm:p-5 border-rose-900/40">
           <span className="text-[11px] sm:text-xs font-medium text-rose-700 dark:text-rose-400 uppercase tracking-wider">
             High Priority
           </span>
@@ -265,7 +262,7 @@ export function ResultsDashboard({
             <CheckCircleIcon size={24} />
           </div>
           <div className="space-y-1">
-            <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+            <h2 className="text-lg font-serif font-normal text-zinc-900 dark:text-zinc-100">
               No Actionable Items Found
             </h2>
             <p className="text-sm text-zinc-500 dark:text-zinc-400 max-w-md mx-auto">
@@ -273,9 +270,13 @@ export function ResultsDashboard({
             </p>
           </div>
           <div className="pt-2">
-            <Button type="button" variant="primary" size="md" onClick={onReset}>
-              Analyze another document
-            </Button>
+            <button
+              type="button"
+              onClick={onReset}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-[#e8ff47]/[0.08] hover:bg-[#e8ff47]/[0.15] text-zinc-100 hover:text-white border border-[#e8ff47]/25 hover:border-[#e8ff47]/45 shadow-xs backdrop-blur-md text-sm font-medium transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#e8ff47] focus-visible:ring-offset-2 focus-visible:ring-offset-[#04040a] active:scale-[0.99]"
+            >
+              <span>Analyze another document</span>
+            </button>
           </div>
         </Card>
       ) : (
@@ -284,10 +285,10 @@ export function ResultsDashboard({
           <section aria-label="Extracted action items" className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <h2 className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
+                <h2 className="text-lg font-serif font-normal tracking-tight text-zinc-900 dark:text-zinc-100">
                   Action Items
                 </h2>
-                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#0e1911] text-zinc-300 border border-[rgba(140,170,120,0.15)]">
                   {actions.length}
                 </span>
               </div>
@@ -304,12 +305,12 @@ export function ResultsDashboard({
           </section>
         ) : (
           <section aria-label="Action items grouped by document" className="space-y-6">
-            <div className="flex items-center justify-between border-b border-zinc-200/80 dark:border-zinc-800/80 pb-3">
+            <div className="flex items-center justify-between border-b border-[rgba(140,170,120,0.14)] pb-3">
               <div className="flex items-center gap-2">
-                <h2 className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
+                <h2 className="text-lg font-serif font-normal tracking-tight text-zinc-900 dark:text-zinc-100">
                   Action Items by Document
                 </h2>
-                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#0e1911] text-zinc-300 border border-[rgba(140,170,120,0.15)]">
                   {actions.length} total
                 </span>
               </div>
@@ -327,12 +328,12 @@ export function ResultsDashboard({
                   <section
                     key={`${group.documentName}-${groupIdx}`}
                     aria-labelledby={headingId}
-                    className="space-y-3.5 rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 bg-zinc-50/50 dark:bg-zinc-900/40 p-4 sm:p-5 shadow-2xs"
+                    className="space-y-3.5 rounded-xl border border-[rgba(140,170,120,0.14)] bg-[#0c150e]/80 p-4 sm:p-5 shadow-2xs"
                   >
                     {/* Document Heading */}
-                    <div className="flex items-center justify-between gap-3 flex-wrap border-b border-zinc-200/60 dark:border-zinc-800/60 pb-3">
+                    <div className="flex items-center justify-between gap-3 flex-wrap border-b border-[rgba(140,170,120,0.12)] pb-3">
                       <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200/80 dark:border-zinc-700/80 shadow-2xs">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#0e1911] text-zinc-300 border border-[rgba(140,170,120,0.15)] shadow-2xs">
                           <DocumentIcon size={16} />
                         </div>
                         <h3
@@ -344,7 +345,7 @@ export function ResultsDashboard({
                         </h3>
                       </div>
 
-                      <span className="text-xs font-medium px-2 py-0.5 rounded-md bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700/60 shrink-0">
+                      <span className="text-xs font-medium px-2 py-0.5 rounded-md bg-[#0e1911] text-zinc-300 border border-[rgba(140,170,120,0.15)] shrink-0">
                         {hasGroupActions
                           ? `${group.actions.length} action${group.actions.length > 1 ? "s" : ""}`
                           : "0 actions"}
@@ -363,7 +364,7 @@ export function ResultsDashboard({
                         ))}
                       </div>
                     ) : (
-                      <div className="py-5 px-4 rounded-lg border border-dashed border-zinc-200 dark:border-zinc-800 text-center text-xs text-zinc-500 dark:text-zinc-400 italic bg-white/40 dark:bg-zinc-900/40">
+                      <div className="py-5 px-4 rounded-lg border border-dashed border-[rgba(140,170,120,0.2)] text-center text-xs text-zinc-400 italic bg-[#0e1911]/40">
                         No action items found in this document.
                       </div>
                     )}
@@ -391,7 +392,7 @@ export function ResultsDashboard({
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <CalendarIcon size={16} className="text-zinc-500" />
-                      <CardTitle className="text-base font-semibold">
+                      <CardTitle className="text-base font-serif font-normal">
                         Upcoming Deadlines
                       </CardTitle>
                     </div>
@@ -404,7 +405,7 @@ export function ResultsDashboard({
                   {deadlines.map((dl) => (
                     <div
                       key={dl.id}
-                      className="flex items-start justify-between gap-3 p-3 rounded-lg border border-zinc-100 dark:border-zinc-800/80 bg-zinc-50/50 dark:bg-zinc-800/30 text-xs"
+                      className="flex items-start justify-between gap-3 p-3 rounded-lg border border-[rgba(140,170,120,0.12)] bg-[#0e1911] text-xs"
                     >
                       <div className="space-y-0.5 min-w-0">
                         <p className="font-semibold text-zinc-900 dark:text-zinc-100 truncate">
@@ -432,7 +433,7 @@ export function ResultsDashboard({
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <ClockIcon size={16} className="text-zinc-500" />
-                      <CardTitle className="text-base font-semibold">
+                      <CardTitle className="text-base font-serif font-normal">
                         Key Events & Dates
                       </CardTitle>
                     </div>
@@ -445,7 +446,7 @@ export function ResultsDashboard({
                   {events.map((ev) => (
                     <div
                       key={ev.id}
-                      className="p-3 rounded-lg border border-zinc-100 dark:border-zinc-800/80 bg-zinc-50/50 dark:bg-zinc-800/30 space-y-1 text-xs"
+                      className="p-3 rounded-lg border border-[rgba(140,170,120,0.12)] bg-[#0e1911] space-y-1 text-xs"
                     >
                       <p className="font-semibold text-zinc-900 dark:text-zinc-100">
                         {ev.title}
@@ -479,13 +480,13 @@ export function ResultsDashboard({
             {/* Upcoming Deadlines by Document */}
             {hasDeadlines && (
               <section aria-label="Upcoming deadlines grouped by document" className="space-y-4">
-                <div className="flex items-center justify-between border-b border-zinc-200/80 dark:border-zinc-800/80 pb-3">
+                <div className="flex items-center justify-between border-b border-[rgba(140,170,120,0.14)] pb-3">
                   <div className="flex items-center gap-2">
                     <CalendarIcon size={18} className="text-zinc-500" />
-                    <h2 className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
+                    <h2 className="text-lg font-serif font-normal tracking-tight text-zinc-900 dark:text-zinc-100">
                       Upcoming Deadlines by Document
                     </h2>
-                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#0e1911] text-zinc-300 border border-[rgba(140,170,120,0.15)]">
                       {deadlines.length} total
                     </span>
                   </div>
@@ -500,12 +501,12 @@ export function ResultsDashboard({
                       <section
                         key={`${group.documentName}-${idx}`}
                         aria-labelledby={headingId}
-                        className="space-y-3 rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 bg-zinc-50/50 dark:bg-zinc-900/40 p-4 sm:p-5 shadow-2xs"
+                        className="space-y-3 rounded-xl border border-[rgba(140,170,120,0.14)] bg-[#0c150e]/80 p-4 sm:p-5 shadow-2xs"
                       >
                         {/* Document Heading */}
-                        <div className="flex items-center justify-between gap-3 flex-wrap border-b border-zinc-200/60 dark:border-zinc-800/60 pb-3">
+                        <div className="flex items-center justify-between gap-3 flex-wrap border-b border-[rgba(140,170,120,0.12)] pb-3">
                           <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200/80 dark:border-zinc-700/80 shadow-2xs">
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#0e1911] text-zinc-300 border border-[rgba(140,170,120,0.15)] shadow-2xs">
                               <DocumentIcon size={16} />
                             </div>
                             <h3
@@ -517,7 +518,7 @@ export function ResultsDashboard({
                             </h3>
                           </div>
 
-                          <span className="text-xs font-medium px-2 py-0.5 rounded-md bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700/60 shrink-0">
+                          <span className="text-xs font-medium px-2 py-0.5 rounded-md bg-[#0e1911] text-zinc-300 border border-[rgba(140,170,120,0.15)] shrink-0">
                             {hasItems
                               ? `${group.items.length} deadline${group.items.length > 1 ? "s" : ""}`
                               : "0 deadlines"}
@@ -530,7 +531,7 @@ export function ResultsDashboard({
                             {group.items.map((dl) => (
                               <div
                                 key={dl.id}
-                                className="flex items-start justify-between gap-3 p-3 rounded-lg border border-zinc-100 dark:border-zinc-800/80 bg-white dark:bg-zinc-900 text-xs shadow-2xs"
+                                className="flex items-start justify-between gap-3 p-3 rounded-lg border border-[rgba(140,170,120,0.12)] bg-[#0e1911] text-xs shadow-2xs"
                               >
                                 <div className="space-y-0.5 min-w-0">
                                   <p className="font-semibold text-zinc-900 dark:text-zinc-100 truncate">
@@ -549,7 +550,7 @@ export function ResultsDashboard({
                             ))}
                           </div>
                         ) : (
-                          <div className="py-4 px-3 rounded-lg border border-dashed border-zinc-200 dark:border-zinc-800 text-center text-xs text-zinc-500 dark:text-zinc-400 italic bg-white/40 dark:bg-zinc-900/40">
+                          <div className="py-4 px-3 rounded-lg border border-dashed border-[rgba(140,170,120,0.2)] text-center text-xs text-zinc-400 italic bg-[#0e1911]/40">
                             No upcoming deadlines found in this document.
                           </div>
                         )}
@@ -563,13 +564,13 @@ export function ResultsDashboard({
             {/* Key Events & Dates by Document */}
             {hasEvents && (
               <section aria-label="Key events and dates grouped by document" className="space-y-4">
-                <div className="flex items-center justify-between border-b border-zinc-200/80 dark:border-zinc-800/80 pb-3">
+                <div className="flex items-center justify-between border-b border-[rgba(140,170,120,0.14)] pb-3">
                   <div className="flex items-center gap-2">
                     <ClockIcon size={18} className="text-zinc-500" />
-                    <h2 className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
+                    <h2 className="text-lg font-serif font-normal tracking-tight text-zinc-900 dark:text-zinc-100">
                       Key Events & Dates by Document
                     </h2>
-                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#0e1911] text-zinc-300 border border-[rgba(140,170,120,0.15)]">
                       {events.length} total
                     </span>
                   </div>
@@ -584,12 +585,12 @@ export function ResultsDashboard({
                       <section
                         key={`${group.documentName}-${idx}`}
                         aria-labelledby={headingId}
-                        className="space-y-3 rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 bg-zinc-50/50 dark:bg-zinc-900/40 p-4 sm:p-5 shadow-2xs"
+                        className="space-y-3 rounded-xl border border-[rgba(140,170,120,0.14)] bg-[#0c150e]/80 p-4 sm:p-5 shadow-2xs"
                       >
                         {/* Document Heading */}
-                        <div className="flex items-center justify-between gap-3 flex-wrap border-b border-zinc-200/60 dark:border-zinc-800/60 pb-3">
+                        <div className="flex items-center justify-between gap-3 flex-wrap border-b border-[rgba(140,170,120,0.12)] pb-3">
                           <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200/80 dark:border-zinc-700/80 shadow-2xs">
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#0e1911] text-zinc-300 border border-[rgba(140,170,120,0.15)] shadow-2xs">
                               <DocumentIcon size={16} />
                             </div>
                             <h3
@@ -601,7 +602,7 @@ export function ResultsDashboard({
                             </h3>
                           </div>
 
-                          <span className="text-xs font-medium px-2 py-0.5 rounded-md bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700/60 shrink-0">
+                          <span className="text-xs font-medium px-2 py-0.5 rounded-md bg-[#0e1911] text-zinc-300 border border-[rgba(140,170,120,0.15)] shrink-0">
                             {hasItems
                               ? `${group.items.length} event${group.items.length > 1 ? "s" : ""}`
                               : "0 events"}
@@ -614,7 +615,7 @@ export function ResultsDashboard({
                             {group.items.map((ev) => (
                               <div
                                 key={ev.id}
-                                className="p-3 rounded-lg border border-zinc-100 dark:border-zinc-800/80 bg-white dark:bg-zinc-900 space-y-1 text-xs shadow-2xs"
+                                className="p-3 rounded-lg border border-[rgba(140,170,120,0.12)] bg-[#0e1911] space-y-1 text-xs shadow-2xs"
                               >
                                 <p className="font-semibold text-zinc-900 dark:text-zinc-100">
                                   {ev.title}
@@ -636,7 +637,7 @@ export function ResultsDashboard({
                             ))}
                           </div>
                         ) : (
-                          <div className="py-4 px-3 rounded-lg border border-dashed border-zinc-200 dark:border-zinc-800 text-center text-xs text-zinc-500 dark:text-zinc-400 italic bg-white/40 dark:bg-zinc-900/40">
+                          <div className="py-4 px-3 rounded-lg border border-dashed border-[rgba(140,170,120,0.2)] text-center text-xs text-zinc-400 italic bg-[#0e1911]/40">
                             No key events or dates found in this document.
                           </div>
                         )}
@@ -653,8 +654,8 @@ export function ResultsDashboard({
       {/* 6. Important Notes & Guidelines */}
       {hasNotes && (
         <section aria-label="Important guidelines and notes">
-          <Card className="border-amber-200 dark:border-amber-900/60 bg-amber-50/40 dark:bg-amber-950/20">
-            <CardHeader className="p-4 sm:p-5 border-b border-amber-200/60 dark:border-amber-900/40">
+          <Card className="border-amber-900/40 bg-[#0c140e]">
+            <CardHeader className="p-4 sm:p-5 border-b border-amber-900/40">
               <div className="flex items-center gap-2 text-amber-900 dark:text-amber-200">
                 <AlertCircleIcon size={18} className="shrink-0 text-amber-700 dark:text-amber-400" />
                 <CardTitle className="text-base font-semibold">
@@ -674,23 +675,21 @@ export function ResultsDashboard({
       )}
 
       {/* 7. Bottom Action Reset Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-zinc-200 dark:border-zinc-800">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-[rgba(140,170,120,0.14)]">
         <p className="text-xs text-zinc-500 dark:text-zinc-400 text-center sm:text-left">
           {isBatch
             ? `Extracted ${metrics.totalActions} actions and ${metrics.totalDeadlines} deadlines across ${docCount} documents.`
             : `Extracted ${metrics.totalActions} actions and ${metrics.totalDeadlines} deadlines from ${document.name}.`}
         </p>
-        <Button
+        <button
           type="button"
-          variant="primary"
-          size="md"
           onClick={onReset}
-          className="w-full sm:w-auto"
+          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#e8ff47]/[0.08] hover:bg-[#e8ff47]/[0.15] text-zinc-100 hover:text-white border border-[#e8ff47]/25 hover:border-[#e8ff47]/45 shadow-[0_4px_20px_rgba(0,0,0,0.4),0_0_12px_rgba(232,255,71,0.08)] hover:shadow-[0_4px_24px_rgba(0,0,0,0.5),0_0_20px_rgba(232,255,71,0.18)] backdrop-blur-md text-sm font-medium transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#e8ff47] focus-visible:ring-offset-2 focus-visible:ring-offset-[#04040a] active:scale-[0.99] group w-full sm:w-auto"
           aria-label="Analyze another document"
         >
           <span>Analyze another document</span>
-          <ArrowRightIcon size={14} className="ml-1.5" />
-        </Button>
+          <ArrowRightIcon size={14} className="text-[#e8ff47] transition-transform duration-200 group-hover:translate-x-0.5" />
+        </button>
       </div>
     </div>
   );

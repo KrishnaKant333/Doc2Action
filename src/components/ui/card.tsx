@@ -7,7 +7,7 @@ export function Card({
 }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={`rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-950 dark:text-zinc-50 ${className}`}
+      className={`rounded-xl border border-zinc-200 dark:border-[rgba(140,170,120,0.14)] bg-white dark:bg-[#0c150e] text-zinc-950 dark:text-zinc-50 shadow-xs ${className}`}
       {...props}
     >
       {children}
@@ -21,7 +21,7 @@ export function CardHeader({
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={`p-5 sm:p-6 border-b border-zinc-100 dark:border-zinc-800/80 ${className}`} {...props}>
+    <div className={`p-5 sm:p-6 border-b border-zinc-100 dark:border-[rgba(140,170,120,0.12)] ${className}`} {...props}>
       {children}
     </div>
   );
@@ -76,7 +76,7 @@ export function CardFooter({
 }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={`p-5 sm:p-6 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between ${className}`}
+      className={`p-5 sm:p-6 border-t border-zinc-100 dark:border-[rgba(140,170,120,0.12)] flex items-center justify-between ${className}`}
       {...props}
     >
       {children}

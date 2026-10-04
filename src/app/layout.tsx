@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { Header } from "@/components/ui/header";
+import { InteractiveBackground } from "@/components/ui/InteractiveBackground";
+import { ScrollToTop } from "@/components/ui/ScrollToTop";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -11,6 +14,23 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+const dmSerifDisplay = localFont({
+  src: [
+    {
+      path: "./fonts/DMSerifDisplay-Regular.ttf",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "./fonts/DMSerifDisplay-Italic.ttf",
+      weight: "400",
+      style: "italic",
+    },
+  ],
+  variable: "--font-dm-serif",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -27,13 +47,15 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${dmSerifDisplay.variable} h-full antialiased dark`}
     >
-      <body className="min-h-full flex flex-col bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 font-sans">
+      <body className="min-h-full flex flex-col bg-[#04040a] text-zinc-100 font-sans relative selection:bg-[#e8ff47]/20 selection:text-[#e8ff47]">
+        <InteractiveBackground />
         <Header />
-        <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-8">
+        <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-8 relative z-10">
           {children}
         </main>
+        <ScrollToTop threshold={300} />
       </body>
     </html>
   );

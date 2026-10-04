@@ -23,13 +23,13 @@ export function SelectedFileCard({
 
   return (
     <div
-      className={`rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 sm:p-6 shadow-xs ${className}`}
+      className={`rounded-xl border border-[rgba(140,170,120,0.14)] bg-[#0b120d] p-4 sm:p-6 shadow-xs ${className}`}
     >
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         {/* File Details Group */}
         <div className="flex items-start sm:items-center gap-3.5 min-w-0 flex-1">
           {/* Document Icon */}
-          <div className="flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-xl bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200 border border-zinc-200/60 dark:border-zinc-700/60">
+          <div className="flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-xl bg-[#0e1911] text-zinc-200 border border-[rgba(140,170,120,0.15)]">
             <DocumentIcon size={22} />
           </div>
 
@@ -42,7 +42,7 @@ export function SelectedFileCard({
               >
                 {file.name}
               </h3>
-              <span className="text-[11px] font-medium font-mono px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700 shrink-0">
+              <span className="text-[11px] font-medium font-mono px-1.5 py-0.5 rounded bg-[#0e1911] text-zinc-400 border border-[rgba(140,170,120,0.15)] shrink-0">
                 {typeLabel}
               </span>
             </div>
