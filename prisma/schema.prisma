@@ -1,0 +1,107 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Workspace {
+  id         String          @id @default(cuid())
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+  documents  Document[]
+  actions    ActionItem[]
+  deadlines  Deadline[]
+  events     Event[]
+  notes      ImportantNote[]
+
+  @@map("workspaces")
+}
+
+model Document {
+  id               String          @id @default(cuid())
+  workspaceId      String
+  workspace        Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  name             String
+  sizeBytes        Int
+  mimeType         String
+  uploadedAt       DateTime        @default(now())
+  processingStatus String          @default("complete") // "complete" | "error"
+  actions          ActionItem[]
+  deadlines        Deadline[]
+  events           Event[]
+  notes            ImportantNote[]
+  createdAt        DateTime        @default(now())
+
+  @@index([workspaceId, createdAt(sort: Desc)])
+  @@map("documents")
+}
+
+model ActionItem {
+  id             String    @id @default(cuid())
+  workspaceId    String
+  workspace      Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  documentId     String
+  document       Document  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  title          String
+  description    String    @db.Text
+  deadline       String?   // Formatted date string or null
+  priority       String    // "high" | "medium" | "low"
+  category       String    // "academic" | "administrative" | "finance" | "event" | "general"
+  status         String    @default("pending") // "pending" | "in_progress" | "completed"
+  sourceSnippet  String?   @db.Text
+  completedAt    DateTime?
+  createdAt      DateTime  @default(now())
+
+  @@index([workspaceId, status])
+  @@index([documentId])
+  @@map("action_items")
+}
+
+model Deadline {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  documentId  String
+  document    Document  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  title       String
+  dueDate     String
+  isStrict    Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+
+  @@index([workspaceId])
+  @@index([documentId])
+  @@map("deadlines")
+}
+
+model Event {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  documentId  String
+  document    Document  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  title       String
+  date        String
+  location    String?
+  createdAt   DateTime  @default(now())
+
+  @@index([workspaceId])
+  @@index([documentId])
+  @@map("events")
+}
+
+model ImportantNote {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  documentId  String
+  document    Document  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  content     String    @db.Text
+  createdAt   DateTime  @default(now())
+
+  @@index([workspaceId])
+  @@index([documentId])
+  @@map("important_notes")
+}

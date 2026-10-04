@@ -2,15 +2,16 @@
 
 import * as React from "react";
 import { AnalysisResult, ProcessingStatus } from "../../lib/types/action";
-import { simulateDocumentAnalysis, ProgressUpdate } from "../../lib/services/mockAnalysisService";
+import { analyzeDocuments } from "../../lib/services/apiAnalysisService";
+import type { ProgressUpdate } from "../../lib/services/mockAnalysisService";
 import { ProgressTimeline } from "../ui/progress-indicator";
-import { DocumentIcon, AlertCircleIcon, XIcon, CheckCircleIcon, ArrowLeftIcon } from "../ui/icons";
+import { DocumentIcon, AlertCircleIcon, XIcon, CheckCircleIcon, ArrowLeftIcon, ClockIcon } from "../ui/icons";
 import { Button } from "../ui/button";
 import { formatFileSize, getFileTypeLabel } from "../upload/fileValidation";
 
 export interface ProcessingScreenProps {
   files: File[];
-  onComplete: (result: AnalysisResult) => void;
+  onComplete: (result: AnalysisResult, warning?: string) => void;
   onCancel: () => void;
   className?: string;
 }
@@ -41,21 +42,14 @@ export function ProcessingScreen({
 
     async function runAnalysis() {
       try {
-        const filePayloads = files.map((file) => ({
-          name: file.name,
-          sizeBytes: file.size,
-          mimeType: file.type,
-        }));
-
-        const result = await simulateDocumentAnalysis(
-          filePayloads,
+        const { result, warning } = await analyzeDocuments(
+          files,
           (update: ProgressUpdate) => {
             if (!isMounted) return;
             setCurrentStatus(update.status);
             setProgressPercent(update.progressPercent);
             setStatusMessage(update.message);
           },
-          650,
           controller.signal
         );
 
@@ -72,7 +66,7 @@ export function ProcessingScreen({
         // Brief delay before triggering onComplete to allow user to register completion
         setTimeout(() => {
           if (isMounted) {
-            onComplete(result);
+            onComplete(result, warning);
           }
         }, 500);
       } catch (err: unknown) {
@@ -234,6 +228,22 @@ export function ProcessingScreen({
             >
               {statusMessage}
             </div>
+
+            {/* Contextual Processing Time Estimate Badge */}
+            {!isCompleted && (
+              <div className="pt-2">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 border border-zinc-200/80 dark:border-zinc-700/80">
+                  <ClockIcon size={13} className="text-zinc-500 dark:text-zinc-400 shrink-0" />
+                  <span>
+                    {totalSize > 150 * 1024
+                      ? `Large document (${formattedTotalSize}) • Analysis may take 2–3 minutes to safely pace requests`
+                      : totalSize > 50 * 1024
+                      ? "Multi-section document • Usually takes 1–2 minutes"
+                      : "Usually takes less than 30 seconds"}
+                  </span>
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Progress Timeline Component */}

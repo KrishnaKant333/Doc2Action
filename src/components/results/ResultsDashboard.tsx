@@ -22,6 +22,7 @@ import { formatFileSize, getFileTypeLabel } from "../upload/fileValidation";
 
 export interface ResultsDashboardProps {
   result: AnalysisResult;
+  warning?: string;
   onReset: () => void;
   className?: string;
 }
@@ -102,6 +103,7 @@ export const groupActionsByDocument = (
 
 export function ResultsDashboard({
   result,
+  warning,
   onReset,
   className = "",
 }: ResultsDashboardProps) {
@@ -190,6 +192,17 @@ export function ResultsDashboard({
           </button>
         </div>
       </div>
+
+      {/* Persistence or system warning banner */}
+      {warning && (
+        <div
+          role="alert"
+          className="flex items-center gap-2.5 p-3.5 rounded-xl border border-amber-200 dark:border-amber-900/60 bg-amber-50/60 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200 text-xs sm:text-sm"
+        >
+          <AlertCircleIcon size={18} className="shrink-0 text-amber-600 dark:text-amber-400" />
+          <p>{warning}</p>
+        </div>
+      )}
 
       {/* 2. Summary Metrics Row */}
       <section aria-label="Key document metrics" className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
