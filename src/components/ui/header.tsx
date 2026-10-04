@@ -13,16 +13,11 @@ export function Header() {
           <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-xs shrink-0">
             <DocumentIcon size={17} />
           </div>
-          <div>
-            <div className="flex items-center gap-2.5">
-              <span className="font-serif font-normal text-base sm:text-lg tracking-tight text-zinc-100">
-                Doc2Action
-              </span>
-              <span className="text-[10px] sm:text-[11px] font-mono px-2 py-0.5 rounded-full bg-zinc-800/80 text-zinc-300 border border-zinc-700/60">
-                WCC Launchpad 30
-              </span>
-            </div>
-            <p className="font-serif text-[11px] sm:text-xs text-zinc-400 hidden sm:block leading-tight">
+          <div className="flex flex-col justify-center">
+            <span className="font-serif font-normal text-base sm:text-lg tracking-tight text-zinc-100 leading-tight">
+              Doc2Action
+            </span>
+            <p className="font-serif text-[11px] sm:text-xs text-zinc-400 hidden sm:block leading-tight mt-0.5">
               Document → Action Automator
             </p>
           </div>

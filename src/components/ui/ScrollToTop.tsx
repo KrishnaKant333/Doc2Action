@@ -17,7 +17,7 @@ export interface ScrollToTopProps {
  * - High contrast accessibility with keyboard focus and aria-label
  */
 export function ScrollToTop({
-  threshold = 120,
+  threshold = 100,
   className = "",
 }: ScrollToTopProps) {
   const [isVisible, setIsVisible] = React.useState(false);

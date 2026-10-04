@@ -1,88 +1,17 @@
-"use client";
-
 import * as React from "react";
 
 /**
  * InteractiveBackground
  * 
- * Recreates the visual atmosphere of Nexus Studio:
+ * Recreates the dark ambient visual atmosphere of Nexus Studio:
  * - Layer 0: Deep dark background (#04040a)
  * - Layer 1: 60px × 60px subtle grid (1px lines with white at 3% opacity)
- * - Layer 2: 800px × 800px electric lime (#e8ff47) soft cursor-following glow (10% opacity, 120px blur, 150ms ease-out)
+ * - Layer 2: Stationary centered ambient lime (#e8ff47) soft atmospheric glow
+ *   (Continuous subtle illumination centered behind the main content area, non-reactive to cursor)
  * 
- * Optimized with direct DOM updates (via useRef + requestAnimationFrame) to prevent React re-renders on pointer movement.
- * Automatically disabled on touch-only devices and when reduced motion is preferred.
+ * Fully non-blocking, accessible, respects prefers-reduced-motion, with pointer-events: none.
  */
 export function InteractiveBackground() {
-  const blobRef = React.useRef<HTMLDivElement>(null);
-
-  React.useEffect(() => {
-    // Disable interactive cursor glow if reduced motion is requested
-    const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    if (motionQuery.matches) {
-      return;
-    }
-
-    // Disable interactive cursor glow on touch devices without fine mouse pointer
-    const pointerQuery = window.matchMedia("(hover: hover) and (pointer: fine)");
-    if (!pointerQuery.matches) {
-      return;
-    }
-
-    const blob = blobRef.current;
-    if (!blob) return;
-
-    let rafId: number | null = null;
-    let latestX = 0;
-    let latestY = 0;
-    let hasAppeared = false;
-
-    const handlePointerMove = (e: PointerEvent) => {
-      latestX = e.clientX;
-      latestY = e.clientY;
-
-      if (rafId === null) {
-        rafId = window.requestAnimationFrame(() => {
-          if (blob) {
-            // Centers 800px glow circle around the pointer
-            blob.style.transform = `translate3d(${latestX - 400}px, ${latestY - 400}px, 0)`;
-
-            if (!hasAppeared) {
-              blob.style.opacity = "0.1";
-              hasAppeared = true;
-            }
-          }
-          rafId = null;
-        });
-      }
-    };
-
-    const handleMouseLeave = () => {
-      if (blob) {
-        blob.style.opacity = "0";
-      }
-    };
-
-    const handleMouseEnter = () => {
-      if (blob && hasAppeared) {
-        blob.style.opacity = "0.1";
-      }
-    };
-
-    window.addEventListener("pointermove", handlePointerMove, { passive: true });
-    document.documentElement.addEventListener("mouseleave", handleMouseLeave);
-    document.documentElement.addEventListener("mouseenter", handleMouseEnter);
-
-    return () => {
-      if (rafId !== null) {
-        window.cancelAnimationFrame(rafId);
-      }
-      window.removeEventListener("pointermove", handlePointerMove);
-      document.documentElement.removeEventListener("mouseleave", handleMouseLeave);
-      document.documentElement.removeEventListener("mouseenter", handleMouseEnter);
-    };
-  }, []);
-
   return (
     <div
       className="fixed inset-0 -z-10 pointer-events-none overflow-hidden bg-[#04040a]"
@@ -100,12 +29,17 @@ export function InteractiveBackground() {
         }}
       />
 
-      {/* Layer 2: 800px electric lime (#e8ff47) cursor-following soft glow */}
+      {/* Layer 2: Stationary centered ambient lime (#e8ff47) soft atmospheric glow */}
       <div
-        ref={blobRef}
-        className="absolute top-0 left-0 w-[800px] h-[800px] rounded-full bg-[#e8ff47] pointer-events-none blur-[120px] will-change-transform opacity-0 hidden [@media(hover:hover)_and_(pointer:fine)]:block motion-reduce:!hidden"
+        className="absolute left-1/2 top-[46%] -translate-x-1/2 -translate-y-1/2 w-[360px] h-[480px] sm:w-[680px] sm:h-[620px] lg:w-[940px] lg:h-[760px] pointer-events-none rounded-full blur-[70px] sm:blur-[90px] lg:blur-[110px] animate-ambient-glow"
         style={{
-          transition: "transform 150ms ease-out, opacity 500ms ease-out",
+          background: `radial-gradient(
+            ellipse at center,
+            rgba(232, 255, 71, 0.09) 0%,
+            rgba(232, 255, 71, 0.055) 32%,
+            rgba(232, 255, 71, 0.02) 58%,
+            transparent 75%
+          )`,
         }}
       />
     </div>
