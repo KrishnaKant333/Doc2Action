@@ -34,6 +34,30 @@ function getGroqClient(): Groq {
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
+ * Parses Groq reset duration headers (e.g. "727ms", "13s", "1m30s") into milliseconds.
+ */
+export function parseResetToMs(resetStr: string | null | undefined): number | null {
+  if (!resetStr) return null;
+  const s = resetStr.trim();
+  const compoundMatch = s.match(/(?:(\d+)h)?(?:(\d+)m)?([\d.]+)s/i);
+  if (compoundMatch && (compoundMatch[1] || compoundMatch[2])) {
+    const hours = parseInt(compoundMatch[1] || "0", 10);
+    const mins = parseInt(compoundMatch[2] || "0", 10);
+    const secs = parseFloat(compoundMatch[3] || "0");
+    return Math.round((hours * 3600 + mins * 60 + secs) * 1000);
+  }
+  const msMatch = s.match(/^([\d.]+)ms$/i);
+  if (msMatch) {
+    return Math.round(parseFloat(msMatch[1]));
+  }
+  const secMatch = s.match(/^([\d.]+)s?$/i);
+  if (secMatch) {
+    return Math.round(parseFloat(secMatch[1]) * 1000);
+  }
+  return null;
+}
+
+/**
  * Classifies a provider rate limit error into either DAILY (TPD) or ROLLING (TPM/RPM).
  * Extracts retry-after wait duration where available.
  */
@@ -167,58 +191,34 @@ export async function analyzeDocumentChunk(
   const groq = getGroqClient();
   const model = process.env.GROQ_MODEL || "openai/gpt-oss-20b";
   const maxCompletionTokens = parseInt(
-    process.env.GROQ_MAX_COMPLETION_TOKENS || "3000",
+    process.env.GROQ_MAX_COMPLETION_TOKENS || "1200",
     10
   );
 
   const estimatedInputTokens = estimateTokens(text);
-  // Realistic completion reservation (~1200 tokens covers ~500 reasoning + dense action output)
-  const totalEstimatedCost = estimatedInputTokens + 1200;
+  // Realistic completion reservation (~650 tokens covers low-reasoning + concise JSON output)
+  const totalEstimatedCost = estimatedInputTokens + 650;
 
   const sectionLabel =
     chunkMeta && chunkMeta.total > 1
-      ? `Analyzing Section ${chunkMeta.index + 1} of ${chunkMeta.total}.`
-      : "Analyzing Document.";
+      ? `Section ${chunkMeta.index + 1} of ${chunkMeta.total}.`
+      : "Document analysis.";
 
-  const systemPrompt = `You are Doc2Action's everyday document intelligence engine.
-${sectionLabel}
+  const systemPrompt = `Doc2Action extraction engine. ${sectionLabel}
+Extract GENUINE HUMAN OBLIGATIONS, EXPLICIT DEADLINES, SCHEDULED EVENTS, and KEY NOTES.
 
-Your mission: Extract only GENUINE HUMAN OBLIGATIONS, EXPLICIT DEADLINES, SCHEDULED EVENTS, and CRITICAL RULES from the document.
-
-CRITICAL EXTRACTION PHILOSOPHY:
-1. WHO IS THE ACTOR & WHAT IS AN ACTION:
-   The actor is the HUMAN READER / SUBMITTER of this document (e.g. the student, author, employee, or project team).
-   An action is a concrete, real-world obligation or deliverable THEY must perform:
-   - Submit report, thesis, or required deliverables
-   - Obtain supervisor, guide, examiner, or management approvals and signatures
-   - Clear mandatory fees or financial dues
-   - Present system demonstration, attend viva voce, or defend project
-   - Register on official portals or complete mandatory clearance forms
-   Target a focused set (typically 3–8 high-value actions per document). If a document is a technical specification or project report with only 2–4 real human obligations, return ONLY those 2–4. Quality beats quantity.
-
-2. WHAT IS NOT AN ACTION (STRICTLY EXCLUDE):
-   - Software application features, module functions, and end-user interactions with the system being described (e.g. "Customer registration/login", "Vehicle information management", "Book service appointment", "Mechanic updates job cards", "Admin analytics"). These are SOFTWARE SYSTEM CAPABILITIES or USER STORIES, NOT TASKS for the document submitter!
-   - System requirements, architectural descriptions, database schemas, and tech stacks (HTML, Java, MySQL). Relocate technical prerequisites to important_notes.
-   - Descriptive project summaries, background literature, or expected benefits.
-   - Do NOT turn functional software specifications into user tasks.
-
-3. CONSOLIDATE RELATED SUB-STEPS:
-   If a document mentions several small steps for a single deliverable (e.g. format report, add signatures, get approval, submit report), group them into ONE comprehensive primary action (e.g. "Finalize and submit project report with guide approvals") rather than creating separate fragmented actions.
-
-4. PRIORITIZATION RULES:
-   - "high": Explicit deadline, mandatory submission, financial payment, required approval/signature, or explicitly urgent directive.
-   - "medium": Mandatory requirement but without an immediate cutoff deadline.
-   - "low": Optional recommendation or non-critical suggestion.
-
-5. IMPORTANT NOTES:
-   Use important_notes for vital information that is NOT an action (e.g. submission formatting rules, degree prerequisites, eligibility criteria, grading schemes, contact details).
-
-Strict Output Constraints:
-- Keep action descriptions concise (maximum 20 words).
-- Keep source_snippet concise (maximum 25 words). Quote only the key clause.
-- If no explicit deadline exists for an action, set deadline to null.
-- If an event has no confirmed date, set date to null. Do NOT invent dates.
-- Return ONLY clean JSON adhering to the specified schema.`;
+Extraction Rules:
+1. ACTIONS: Real-world tasks the human reader must DO (submit, register, pay, sign, attend viva/defense).
+   - OMIT software features, modules, architecture, and user stories (e.g. "Customer login", "Manage inventory" are NOT tasks).
+   - Consolidate sub-steps into 1 primary action. Target 3-8 high-value actions.
+   - title <= 10 words.
+   - description <= 15 words.
+   - source_snippet <= 20 words (exact brief clause).
+   - deadline: ISO date string or null.
+2. DEADLINES: Explicit cutoff dates/times with is_strict boolean.
+3. EVENTS: Scheduled gatherings/vivas/meetings. Date ISO string or null. Location or null.
+4. IMPORTANT NOTES: Concise bullet points for non-action rules, tech stack, or prerequisites.
+Do NOT explain reasoning. Return ONLY valid JSON adhering strictly to the schema.`;
 
   const jsonSchema = {
     type: "object" as const,
@@ -299,13 +299,12 @@ Strict Output Constraints:
     // 1. Wait for rolling TPM rate limiter budget before sending
     await globalTokenLimiter.waitForBudget(totalEstimatedCost);
 
-    const reasoningEffort = process.env.GROQ_REASONING_EFFORT as
+    const reasoningEffort = (process.env.GROQ_REASONING_EFFORT || "low") as
       | "high"
       | "medium"
       | "low"
       | "none"
-      | "default"
-      | undefined;
+      | "default";
 
     const requestParams: Parameters<typeof groq.chat.completions.create>[0] = {
       model,
@@ -329,20 +328,65 @@ Strict Output Constraints:
           schema: jsonSchema,
         },
       },
-      ...(reasoningEffort ? { reasoning_effort: reasoningEffort } : {}),
+      reasoning_effort: reasoningEffort,
     };
 
+    const callStart = Date.now();
     let response: Groq.Chat.ChatCompletion;
     try {
-      response = (await groq.chat.completions.create(requestParams)) as Groq.Chat.ChatCompletion;
-    } catch (apiErr) {
+      const completionWithResponse = await groq.chat.completions
+        .create(requestParams)
+        .withResponse();
+      response = completionWithResponse.data as Groq.Chat.ChatCompletion;
+
+      // Extract telemetry from Groq rate-limit headers
+      const headers = completionWithResponse.response.headers;
+      const remainingTokensStr = headers.get("x-ratelimit-remaining-tokens");
+      const resetTokensStr = headers.get("x-ratelimit-reset-tokens");
+      const remainingTokens = remainingTokensStr
+        ? parseInt(remainingTokensStr, 10)
+        : null;
+      const resetMs = parseResetToMs(resetTokensStr);
+
+      if (remainingTokens !== null || resetMs !== null) {
+        globalTokenLimiter.updateProviderCapacity(remainingTokens, resetMs);
+      }
+    } catch (apiErr: unknown) {
       // Release in-flight reservation so retry or subsequent requests are not blocked by phantom tokens
       globalTokenLimiter.releaseReservation(totalEstimatedCost);
+
+      const errHeaders = (
+        apiErr as { headers?: { get?: (k: string) => string | null } }
+      )?.headers;
+      if (errHeaders && typeof errHeaders.get === "function") {
+        const remainingTokensStr = errHeaders.get("x-ratelimit-remaining-tokens");
+        const resetTokensStr = errHeaders.get("x-ratelimit-reset-tokens");
+        const remainingTokens = remainingTokensStr
+          ? parseInt(remainingTokensStr, 10)
+          : null;
+        const resetMs = parseResetToMs(resetTokensStr);
+        if (remainingTokens !== null || resetMs !== null) {
+          globalTokenLimiter.updateProviderCapacity(remainingTokens, resetMs);
+        }
+      }
+
       throw apiErr;
     }
+    const callLatencyMs = Date.now() - callStart;
+
+    const usage: any = response.usage;
+    const promptTokens = usage?.prompt_tokens ?? estimatedInputTokens;
+    const completionTokens = usage?.completion_tokens ?? 0;
+    const reasoningTokens = usage?.completion_tokens_details?.reasoning_tokens ?? 0;
+    const actualTokens = usage?.total_tokens ?? (promptTokens + completionTokens);
+
+    console.log(
+      `[GroqUsage] Chunk ${(chunkMeta?.index ?? 0) + 1}/${
+        chunkMeta?.total ?? 1
+      } | Latency: ${callLatencyMs}ms | Prompt: ${promptTokens} | Completion: ${completionTokens} (Reasoning: ${reasoningTokens}) | Total: ${actualTokens} | reasoning_effort: ${reasoningEffort}`
+    );
 
     // Record actual token usage if provided, else fallback to estimated
-    const actualTokens = response.usage?.total_tokens ?? totalEstimatedCost;
     globalTokenLimiter.recordUsage(actualTokens, totalEstimatedCost);
 
     const content = response.choices[0]?.message?.content;
