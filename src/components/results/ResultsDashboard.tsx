@@ -197,9 +197,9 @@ export function ResultsDashboard({
       {warning && (
         <div
           role="alert"
-          className="flex items-center gap-2.5 p-3.5 rounded-xl border border-amber-200 dark:border-amber-900/60 bg-amber-50/60 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200 text-xs sm:text-sm"
+          className="flex items-center gap-2.5 p-3.5 rounded-xl border border-amber-900/60 bg-amber-950/40 text-amber-200 text-xs sm:text-sm"
         >
-          <AlertCircleIcon size={18} className="shrink-0 text-amber-600 dark:text-amber-400" />
+          <AlertCircleIcon size={18} className="shrink-0 text-amber-400" />
           <p>{warning}</p>
         </div>
       )}

@@ -103,7 +103,7 @@ export function ProcessingScreen({
   const formattedTotalSize = formatFileSize(totalSize);
 
   return (
-    <div className={`w-full max-w-xl mx-auto space-y-6 ${className}`}>
+    <div className={`w-full max-w-3xl mx-auto space-y-6 ${className}`}>
       {/* Back to Upload Navigation Button */}
       <div className="flex items-center justify-start">
         <button
@@ -232,8 +232,8 @@ export function ProcessingScreen({
             {/* Contextual Processing Time Estimate Badge */}
             {!isCompleted && (
               <div className="pt-2">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 border border-zinc-200/80 dark:border-zinc-700/80">
-                  <ClockIcon size={13} className="text-zinc-500 dark:text-zinc-400 shrink-0" />
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs bg-[#0e1911] text-zinc-300 border border-[rgba(140,170,120,0.15)]">
+                  <ClockIcon size={13} className="text-[#e8ff47]/70 shrink-0" />
                   <span>
                     {totalSize > 150 * 1024
                       ? `Large document (${formattedTotalSize}) • Analysis may take 2–3 minutes to safely pace requests`

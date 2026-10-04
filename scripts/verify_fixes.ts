@@ -1,8 +1,7 @@
 import fs from "fs";
 import path from "path";
-import { splitTextIntoChunks, estimateTokens, MAX_DOCUMENT_TOKENS } from "../src/ai/processing/chunking";
+import { estimateTokens, MAX_DOCUMENT_TOKENS } from "../src/ai/processing/chunking";
 import { TokenRateLimiter } from "../src/ai/services/tokenBudget";
-import { AppProcessingError } from "../src/ai/services/groq";
 
 const API_BASE = "http://localhost:3000/api/analyze";
 
@@ -133,7 +132,7 @@ All graduating candidates must complete every item in the following comprehensiv
     }
 
     const actions = json.data.actions;
-    const verboseActions = actions.filter((a: any) => {
+    const verboseActions = actions.filter((a: { description?: string; sourceSnippet?: string }) => {
       const descWords = (a.description || "").trim().split(/\s+/).length;
       const snippetWords = (a.sourceSnippet || "").trim().split(/\s+/).length;
       return descWords > 25 || snippetWords > 30; // some slight leniency margin for counting
@@ -180,7 +179,7 @@ Faculty members are requested to register their intent to present abstracts befo
     }
 
     const events = json.data.events;
-    const hasNullDateEvent = events.some((e: any) => e.date === null || e.date === "" || e.date === undefined);
+    const hasNullDateEvent = events.some((e: { date?: string | null }) => e.date === null || e.date === "" || e.date === undefined);
 
     results["TEST_D"] = {
       pass: events.length > 0 && hasNullDateEvent,
@@ -200,7 +199,6 @@ Faculty members are requested to register their intent to present abstracts befo
     const limiter = new TokenRateLimiter(7000, 60000);
     // Simulate consuming 6000 tokens
     limiter.recordUsage(6000, Date.now() - 30000); // 30s ago
-    const startWait = Date.now();
     // Requesting 2500 tokens should pause until the 60s window frees tokens
     const waitPromise = limiter.waitForBudget(2500);
     

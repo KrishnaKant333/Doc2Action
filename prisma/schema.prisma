@@ -83,7 +83,7 @@ model Event {
   documentId  String
   document    Document  @relation(fields: [documentId], references: [id], onDelete: Cascade)
   title       String
-  date        String
+  date        String?
   location    String?
   createdAt   DateTime  @default(now())
 

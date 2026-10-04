@@ -54,18 +54,18 @@ export default function Home() {
   return (
     <div className="py-6 sm:py-10 space-y-6">
       {/* Top Workspace Navigation Tabs */}
-      <div className="flex items-center justify-between border-b border-zinc-200/80 dark:border-zinc-800/80 pb-3">
+      <div className="flex items-center justify-between border-b border-[rgba(140,170,120,0.14)] pb-4 gap-4 flex-wrap">
         <nav
           aria-label="Workspace tabs"
-          className="inline-flex items-center p-1 rounded-xl bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200/60 dark:border-zinc-700/60 text-xs font-medium"
+          className="inline-flex items-center p-1 rounded-xl bg-[#0b120d]/90 backdrop-blur-md border border-[rgba(140,170,120,0.15)] shadow-xs text-xs font-medium"
         >
           <button
             type="button"
             onClick={() => setActiveTab("analyzer")}
-            className={`px-3.5 py-1.5 rounded-lg transition-all ${
+            className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer ${
               activeTab === "analyzer"
-                ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-xs font-semibold"
-                : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
+                ? "bg-[#0e1911] text-zinc-100 border border-[rgba(140,170,120,0.22)] shadow-xs font-semibold"
+                : "text-zinc-400 hover:text-zinc-200 hover:bg-[#0e1911]/60"
             }`}
           >
             Document Analyzer
@@ -73,10 +73,10 @@ export default function Home() {
           <button
             type="button"
             onClick={() => setActiveTab("actions")}
-            className={`px-3.5 py-1.5 rounded-lg transition-all ${
+            className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer ${
               activeTab === "actions"
-                ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-xs font-semibold"
-                : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
+                ? "bg-[#0e1911] text-zinc-100 border border-[rgba(140,170,120,0.22)] shadow-xs font-semibold"
+                : "text-zinc-400 hover:text-zinc-200 hover:bg-[#0e1911]/60"
             }`}
           >
             My Actions
@@ -84,17 +84,18 @@ export default function Home() {
           <button
             type="button"
             onClick={() => setActiveTab("history")}
-            className={`px-3.5 py-1.5 rounded-lg transition-all ${
+            className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer ${
               activeTab === "history"
-                ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-xs font-semibold"
-                : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
+                ? "bg-[#0e1911] text-zinc-100 border border-[rgba(140,170,120,0.22)] shadow-xs font-semibold"
+                : "text-zinc-400 hover:text-zinc-200 hover:bg-[#0e1911]/60"
             }`}
           >
             Recent Documents
           </button>
         </nav>
 
-        <span className="text-[11px] font-mono text-zinc-400 dark:text-zinc-500 hidden sm:inline">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#0e1911] text-zinc-400 border border-[rgba(140,170,120,0.14)] text-[11px] font-mono hidden sm:inline-flex">
+          <span className="h-1.5 w-1.5 rounded-full bg-[#e8ff47]/70"></span>
           Workspace: Anonymous Session
         </span>
       </div>

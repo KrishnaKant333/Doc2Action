@@ -3,10 +3,10 @@ import { DocumentIcon } from "./icons";
 
 export function Header() {
   return (
-    <header className="sticky top-3 sm:top-5 z-30 w-full px-4 sm:px-6 flex justify-center pointer-events-none">
+    <header className="sticky top-3 sm:top-5 z-30 w-full px-4 sm:px-6 lg:px-8 flex justify-center pointer-events-none">
       <nav
         aria-label="Main navigation"
-        className="pointer-events-auto w-full max-w-3xl lg:max-w-4xl rounded-3xl bg-[#08120c]/85 backdrop-blur-md border border-[rgba(120,160,100,0.15)] shadow-[0_12px_36px_rgba(0,0,0,0.5)] px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-6 lg:gap-10 transition-all duration-200"
+        className="pointer-events-auto w-full max-w-4xl lg:max-w-5xl xl:max-w-6xl rounded-3xl bg-[#08120c]/85 backdrop-blur-md border border-[rgba(120,160,100,0.15)] shadow-[0_12px_36px_rgba(0,0,0,0.5)] px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-6 lg:gap-10 transition-all duration-200"
       >
         {/* Left Side: Branding */}
         <div className="flex items-center gap-2.5 sm:gap-3.5">

@@ -42,8 +42,24 @@ export function RecentDocumentsView({
   }, []);
 
   React.useEffect(() => {
-    loadDocs();
-  }, [loadDocs]);
+    let isMounted = true;
+    fetchRecentDocuments()
+      .then((docs) => {
+        if (isMounted) {
+          setDocuments(docs);
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setError("Failed to load recent documents.");
+          setLoading(false);
+        }
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handleDocumentClick = async (docId: string) => {
     setLoadingDocId(docId);
@@ -64,8 +80,8 @@ export function RecentDocumentsView({
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center p-12 space-y-3">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900 dark:border-zinc-700 dark:border-t-zinc-100" />
-        <p className="text-xs text-zinc-500 font-medium">Loading recent documents...</p>
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[rgba(140,170,120,0.2)] border-t-[#e8ff47]" />
+        <p className="text-xs text-zinc-400 font-medium">Loading recent documents...</p>
       </div>
     );
   }
@@ -73,53 +89,62 @@ export function RecentDocumentsView({
   return (
     <div className={`space-y-6 animate-fade-in ${className}`}>
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-5 rounded-xl border border-[rgba(140,170,120,0.14)] bg-[#0b120d] shadow-xs">
         <div>
-          <h1 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-zinc-100">
+          <h1 className="text-xl sm:text-2xl font-serif font-normal tracking-tight text-zinc-100">
             Recent Documents
           </h1>
-          <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 mt-0.5">
+          <p className="text-xs sm:text-sm text-zinc-400 mt-1">
             Access recent circulars, notices, and action plans analyzed in your browser.
           </p>
         </div>
         {onGoToUpload && (
-          <Button
+          <button
             type="button"
-            variant="primary"
-            size="sm"
             onClick={onGoToUpload}
-            className="text-xs self-start sm:self-center"
+            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#e8ff47]/[0.08] hover:bg-[#e8ff47]/[0.16] text-zinc-100 hover:text-white border border-[#e8ff47]/25 hover:border-[#e8ff47]/45 shadow-xs backdrop-blur-md text-xs font-medium transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#e8ff47] focus-visible:ring-offset-2 focus-visible:ring-offset-[#04040a] self-start sm:self-center shrink-0 active:scale-[0.99]"
           >
-            + Upload New Document
-          </Button>
+            <span>+ Upload New Document</span>
+          </button>
         )}
       </div>
 
       {error ? (
-        <Card className="p-8 text-center space-y-3 max-w-lg mx-auto">
-          <AlertCircleIcon size={24} className="mx-auto text-amber-600" />
-          <p className="text-sm text-zinc-700 dark:text-zinc-300">{error}</p>
-          <Button variant="outline" size="sm" onClick={loadDocs}>
+        <Card className="p-8 text-center space-y-3 max-w-lg mx-auto border-[rgba(140,170,120,0.14)] bg-[#0c150e]/80">
+          <AlertCircleIcon size={24} className="mx-auto text-amber-500" />
+          <p className="text-sm text-zinc-300">{error}</p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={loadDocs}
+            className="border-[rgba(140,170,120,0.2)] text-zinc-200 hover:bg-[#0e1911]"
+          >
             Retry
           </Button>
         </Card>
       ) : documents.length === 0 ? (
-        <Card className="p-10 text-center space-y-4 max-w-lg mx-auto">
-          <div className="flex h-12 w-12 mx-auto items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500">
+        <Card className="p-10 text-center space-y-4 max-w-lg mx-auto border-[rgba(140,170,120,0.14)] bg-[#0c150e]/80">
+          <div className="flex h-12 w-12 mx-auto items-center justify-center rounded-xl bg-[#0e1911] text-zinc-300 border border-[rgba(140,170,120,0.15)]">
             <DocumentIcon size={24} />
           </div>
-          <div>
-            <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+          <div className="space-y-1">
+            <h2 className="text-base sm:text-lg font-serif font-normal text-zinc-100">
               No Documents in History
             </h2>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+            <p className="text-xs sm:text-sm text-zinc-400 mt-1 max-w-sm mx-auto">
               Documents you process will be retained here for easy access.
             </p>
           </div>
           {onGoToUpload && (
-            <Button variant="primary" size="sm" onClick={onGoToUpload}>
-              Analyze a Document
-            </Button>
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={onGoToUpload}
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-[#e8ff47]/[0.1] hover:bg-[#e8ff47]/[0.2] text-zinc-100 hover:text-white border border-[#e8ff47]/30 hover:border-[#e8ff47]/50 text-xs sm:text-sm font-medium transition-all shadow-xs cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#e8ff47]"
+              >
+                <span>Analyze a Document</span>
+              </button>
+            </div>
           )}
         </Card>
       ) : (
@@ -136,37 +161,37 @@ export function RecentDocumentsView({
             return (
               <article
                 key={doc.id}
-                className="p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors hover:border-zinc-300 dark:hover:border-zinc-700"
+                className="p-4 sm:p-5 rounded-xl border border-[rgba(140,170,120,0.14)] bg-[#0e1911] hover:bg-[#111d14] hover:border-[rgba(140,170,120,0.28)] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all"
               >
-                <div className="flex items-start gap-3 min-w-0">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700/60">
+                <div className="flex items-start gap-3.5 min-w-0 flex-1">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#0c150e] text-zinc-200 border border-[rgba(140,170,120,0.15)]">
                     <DocumentIcon size={20} />
                   </div>
                   <div className="min-w-0 flex-1 space-y-1">
-                    <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate" title={doc.name}>
+                    <h3 className="text-sm sm:text-base font-semibold text-zinc-100 truncate" title={doc.name}>
                       {doc.name}
                     </h3>
-                    <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400 flex-wrap">
+                    <div className="flex items-center gap-2 text-xs text-zinc-400 flex-wrap">
                       <span>{getFileTypeLabel({ name: doc.name, type: doc.mimeType })}</span>
                       <span>•</span>
                       <span>{formatFileSize(doc.sizeBytes)}</span>
                       <span>•</span>
-                      <span className="inline-flex items-center gap-1">
-                        <CalendarIcon size={12} /> {formattedDate}
+                      <span className="inline-flex items-center gap-1 font-mono">
+                        <CalendarIcon size={12} className="text-zinc-500" /> {formattedDate}
                       </span>
                     </div>
 
                     <div className="flex items-center gap-2 pt-1 flex-wrap">
-                      <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">
+                      <span className="text-[11px] font-mono font-medium px-2 py-0.5 rounded bg-[#0c150e] text-zinc-300 border border-[rgba(140,170,120,0.14)]">
                         {doc.actionCount} task{doc.actionCount === 1 ? "" : "s"}
                       </span>
                       {doc.deadlineCount > 0 && (
-                        <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-900/40">
+                        <span className="text-[11px] font-mono font-medium px-2 py-0.5 rounded bg-amber-950/40 text-amber-300 border border-amber-900/40">
                           {doc.deadlineCount} deadline{doc.deadlineCount === 1 ? "" : "s"}
                         </span>
                       )}
                       {doc.eventCount > 0 && (
-                        <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-900/40">
+                        <span className="text-[11px] font-mono font-medium px-2 py-0.5 rounded bg-blue-950/40 text-blue-300 border border-blue-900/40">
                           {doc.eventCount} event{doc.eventCount === 1 ? "" : "s"}
                         </span>
                       )}
@@ -174,17 +199,15 @@ export function RecentDocumentsView({
                   </div>
                 </div>
 
-                <Button
+                <button
                   type="button"
-                  variant="outline"
-                  size="sm"
                   disabled={isLoadingThis}
                   onClick={() => handleDocumentClick(doc.id)}
-                  className="text-xs shrink-0 self-end sm:self-center"
+                  className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#e8ff47]/[0.08] hover:bg-[#e8ff47]/[0.18] text-zinc-200 hover:text-white border border-[#e8ff47]/20 hover:border-[#e8ff47]/45 text-xs font-medium transition-all group shrink-0 self-end sm:self-center cursor-pointer disabled:opacity-50"
                 >
-                  {isLoadingThis ? "Loading..." : "View Results"}
-                  <ArrowRightIcon size={13} className="ml-1.5" />
-                </Button>
+                  <span>{isLoadingThis ? "Loading..." : "View Results"}</span>
+                  <ArrowRightIcon size={13} className="text-[#e8ff47] transition-transform group-hover:translate-x-0.5" />
+                </button>
               </article>
             );
           })}

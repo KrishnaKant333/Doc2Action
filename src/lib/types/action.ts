@@ -64,7 +64,7 @@ export interface Deadline {
 export interface Event {
   id: string;
   title: string;
-  date: string;
+  date: string | null;
   location?: string;
   sourceDocument?: string;
 }

@@ -299,7 +299,15 @@ Strict Output Constraints:
     // 1. Wait for rolling TPM rate limiter budget before sending
     await globalTokenLimiter.waitForBudget(totalEstimatedCost);
 
-    const requestParams: any = {
+    const reasoningEffort = process.env.GROQ_REASONING_EFFORT as
+      | "high"
+      | "medium"
+      | "low"
+      | "none"
+      | "default"
+      | undefined;
+
+    const requestParams: Parameters<typeof groq.chat.completions.create>[0] = {
       model,
       temperature: 0.1,
       max_completion_tokens: maxCompletionTokens,
@@ -321,16 +329,12 @@ Strict Output Constraints:
           schema: jsonSchema,
         },
       },
+      ...(reasoningEffort ? { reasoning_effort: reasoningEffort } : {}),
     };
 
-    const reasoningEffort = process.env.GROQ_REASONING_EFFORT;
-    if (reasoningEffort) {
-      requestParams.reasoning_effort = reasoningEffort;
-    }
-
-    let response;
+    let response: Groq.Chat.ChatCompletion;
     try {
-      response = await groq.chat.completions.create(requestParams);
+      response = (await groq.chat.completions.create(requestParams)) as Groq.Chat.ChatCompletion;
     } catch (apiErr) {
       // Release in-flight reservation so retry or subsequent requests are not blocked by phantom tokens
       globalTokenLimiter.releaseReservation(totalEstimatedCost);

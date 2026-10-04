@@ -45,8 +45,25 @@ export function MyActionsView({
   }, []);
 
   React.useEffect(() => {
-    loadActions();
-  }, [loadActions]);
+    let isMounted = true;
+    fetchMyActions()
+      .then((res) => {
+        if (isMounted) {
+          setData(res);
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setError("Failed to load your actions. Please try again.");
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handleToggle = async (action: ActionItem) => {
     const nextStatus: ActionStatus = action.status === "completed" ? "pending" : "completed";
@@ -93,20 +110,25 @@ export function MyActionsView({
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center p-12 space-y-3">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900 dark:border-zinc-700 dark:border-t-zinc-100" />
-        <p className="text-xs text-zinc-500 font-medium">Loading workspace actions...</p>
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[rgba(140,170,120,0.2)] border-t-[#e8ff47]" />
+        <p className="text-xs text-zinc-400 font-medium">Loading workspace actions...</p>
       </div>
     );
   }
 
   if (error || !data) {
     return (
-      <Card className="p-8 text-center space-y-3 max-w-lg mx-auto">
-        <AlertCircleIcon size={24} className="mx-auto text-amber-600" />
-        <p className="text-sm text-zinc-700 dark:text-zinc-300">
+      <Card className="p-8 text-center space-y-3 max-w-lg mx-auto border-[rgba(140,170,120,0.14)] bg-[#0c150e]/80">
+        <AlertCircleIcon size={24} className="mx-auto text-amber-500" />
+        <p className="text-sm text-zinc-300">
           {error || "No saved actions found in your workspace."}
         </p>
-        <Button variant="outline" size="sm" onClick={loadActions}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={loadActions}
+          className="border-[rgba(140,170,120,0.2)] text-zinc-200 hover:bg-[#0e1911]"
+        >
           Retry
         </Button>
       </Card>
@@ -119,62 +141,60 @@ export function MyActionsView({
   return (
     <div className={`space-y-8 animate-fade-in ${className}`}>
       {/* 1. Header with Stats */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-5 rounded-xl border border-[rgba(140,170,120,0.14)] bg-[#0b120d] shadow-xs">
         <div>
-          <h1 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-zinc-100">
+          <h1 className="text-xl sm:text-2xl font-serif font-normal tracking-tight text-zinc-100">
             My Actions
           </h1>
-          <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 mt-0.5">
+          <p className="text-xs sm:text-sm text-zinc-400 mt-1">
             Consolidated tasks and deadlines extracted across your recent documents.
           </p>
         </div>
         {onGoToUpload && (
-          <Button
+          <button
             type="button"
-            variant="primary"
-            size="sm"
             onClick={onGoToUpload}
-            className="text-xs self-start sm:self-center"
+            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#e8ff47]/[0.08] hover:bg-[#e8ff47]/[0.16] text-zinc-100 hover:text-white border border-[#e8ff47]/25 hover:border-[#e8ff47]/45 shadow-xs backdrop-blur-md text-xs font-medium transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#e8ff47] focus-visible:ring-offset-2 focus-visible:ring-offset-[#04040a] self-start sm:self-center shrink-0 active:scale-[0.99]"
           >
-            + Analyze New Document
-          </Button>
+            <span>+ Analyze New Document</span>
+          </button>
         )}
       </div>
 
       {/* 2. Metrics Row */}
-      <section aria-label="Action status summary" className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <Card className="p-3 sm:p-4">
-          <span className="text-[11px] font-medium text-zinc-500 uppercase tracking-wider">
+      <section aria-label="Action status summary" className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+        <Card className="p-3.5 sm:p-5">
+          <span className="text-[11px] sm:text-xs font-medium text-zinc-400 uppercase tracking-wider">
             Total Tasks
           </span>
-          <div className="mt-1 text-2xl font-bold text-zinc-900 dark:text-zinc-100">
+          <div className="mt-2 text-2xl sm:text-3xl font-bold tracking-tight text-zinc-100">
             {metrics.total}
           </div>
         </Card>
 
-        <Card className="p-3 sm:p-4">
-          <span className="text-[11px] font-medium text-rose-600 uppercase tracking-wider">
+        <Card className="p-3.5 sm:p-5 border-rose-900/40">
+          <span className="text-[11px] sm:text-xs font-medium text-rose-400 uppercase tracking-wider">
             Overdue
           </span>
-          <div className="mt-1 text-2xl font-bold text-rose-600">
+          <div className="mt-2 text-2xl sm:text-3xl font-bold tracking-tight text-rose-400">
             {metrics.overdue}
           </div>
         </Card>
 
-        <Card className="p-3 sm:p-4">
-          <span className="text-[11px] font-medium text-amber-600 uppercase tracking-wider">
+        <Card className="p-3.5 sm:p-5 border-amber-900/40">
+          <span className="text-[11px] sm:text-xs font-medium text-amber-400 uppercase tracking-wider">
             Due Soon
           </span>
-          <div className="mt-1 text-2xl font-bold text-amber-600">
+          <div className="mt-2 text-2xl sm:text-3xl font-bold tracking-tight text-amber-400">
             {metrics.dueSoon}
           </div>
         </Card>
 
-        <Card className="p-3 sm:p-4">
-          <span className="text-[11px] font-medium text-emerald-600 uppercase tracking-wider">
+        <Card className="p-3.5 sm:p-5 border-emerald-900/40">
+          <span className="text-[11px] sm:text-xs font-medium text-emerald-400 uppercase tracking-wider">
             Completed
           </span>
-          <div className="mt-1 text-2xl font-bold text-emerald-600">
+          <div className="mt-2 text-2xl sm:text-3xl font-bold tracking-tight text-emerald-400">
             {metrics.completed}
           </div>
         </Card>
@@ -182,22 +202,28 @@ export function MyActionsView({
 
       {/* 3. Empty State */}
       {!hasAny ? (
-        <Card className="p-10 text-center space-y-4 max-w-lg mx-auto">
-          <div className="flex h-12 w-12 mx-auto items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500">
+        <Card className="p-10 text-center space-y-4 max-w-lg mx-auto border-[rgba(140,170,120,0.14)] bg-[#0c150e]/80">
+          <div className="flex h-12 w-12 mx-auto items-center justify-center rounded-xl bg-[#0e1911] text-zinc-300 border border-[rgba(140,170,120,0.15)]">
             <CheckCircleIcon size={24} />
           </div>
-          <div>
-            <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+          <div className="space-y-1">
+            <h2 className="text-base sm:text-lg font-serif font-normal text-zinc-100">
               No Actions Recorded Yet
             </h2>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 max-w-sm mx-auto">
+            <p className="text-xs sm:text-sm text-zinc-400 max-w-sm mx-auto">
               Upload a college notice, syllabus, or circular to automatically extract your tasks.
             </p>
           </div>
           {onGoToUpload && (
-            <Button variant="primary" size="sm" onClick={onGoToUpload}>
-              Upload a Document
-            </Button>
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={onGoToUpload}
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-[#e8ff47]/[0.1] hover:bg-[#e8ff47]/[0.2] text-zinc-100 hover:text-white border border-[#e8ff47]/30 hover:border-[#e8ff47]/50 text-xs sm:text-sm font-medium transition-all shadow-xs cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#e8ff47]"
+              >
+                <span>Upload a Document</span>
+              </button>
+            </div>
           )}
         </Card>
       ) : (
@@ -207,7 +233,7 @@ export function MyActionsView({
           {groups.overdue.length > 0 && (
             <ActionSection
               title="Overdue"
-              icon={<AlertCircleIcon size={16} className="text-rose-600" />}
+              icon={<AlertCircleIcon size={16} className="text-rose-400" />}
               badgeVariant="danger"
               items={groups.overdue}
               onToggle={handleToggle}
@@ -218,7 +244,7 @@ export function MyActionsView({
           {groups.dueSoon.length > 0 && (
             <ActionSection
               title="Due Soon"
-              icon={<ClockIcon size={16} className="text-amber-600" />}
+              icon={<ClockIcon size={16} className="text-amber-400" />}
               badgeVariant="warning"
               items={groups.dueSoon}
               onToggle={handleToggle}
@@ -229,7 +255,7 @@ export function MyActionsView({
           {groups.upcoming.length > 0 && (
             <ActionSection
               title="Upcoming & General"
-              icon={<CalendarIcon size={16} className="text-zinc-500" />}
+              icon={<CalendarIcon size={16} className="text-zinc-400" />}
               items={groups.upcoming}
               onToggle={handleToggle}
             />
@@ -239,7 +265,7 @@ export function MyActionsView({
           {groups.completed.length > 0 && (
             <ActionSection
               title="Completed"
-              icon={<CheckCircleIcon size={16} className="text-emerald-600" />}
+              icon={<CheckCircleIcon size={16} className="text-emerald-400" />}
               badgeVariant="success"
               items={groups.completed}
               onToggle={handleToggle}
@@ -267,23 +293,23 @@ function ActionSection({
   isCompletedSection?: boolean;
 }) {
   return (
-    <section className="space-y-2.5">
+    <section className="space-y-3">
       <div className="flex items-center gap-2">
         {icon}
-        <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+        <h2 className="text-base font-serif font-normal text-zinc-100 tracking-tight">
           {title}
         </h2>
-        <span className="text-[11px] font-mono px-2 py-0.2 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
+        <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-[#0e1911] text-zinc-300 border border-[rgba(140,170,120,0.15)]">
           {items.length}
         </span>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         {items.map((item) => (
           <article
             key={item.id}
-            className={`p-3.5 sm:p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs flex items-start gap-3 transition-colors ${
-              isCompletedSection ? "opacity-60 bg-zinc-50/50 dark:bg-zinc-900/40" : ""
+            className={`p-4 sm:p-5 rounded-xl border border-[rgba(140,170,120,0.14)] bg-[#0e1911] hover:bg-[#111d14] hover:border-[rgba(140,170,120,0.28)] shadow-xs flex items-start gap-3.5 transition-all ${
+              isCompletedSection ? "opacity-55 bg-[#0c150e]/60 border-[rgba(140,170,120,0.1)]" : ""
             }`}
           >
             <input
@@ -293,13 +319,13 @@ function ActionSection({
               aria-label={`Mark "${item.title}" as ${
                 item.status === "completed" ? "pending" : "completed"
               }`}
-              className="mt-1 h-4 w-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 cursor-pointer"
+              className="mt-1 h-4 w-4 rounded border-[rgba(140,170,120,0.3)] bg-[#0c150e] text-[#e8ff47] accent-[#e8ff47] focus:ring-[#e8ff47] cursor-pointer"
             />
-            <div className="min-w-0 flex-1 space-y-1">
+            <div className="min-w-0 flex-1 space-y-1.5">
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <h3
-                  className={`text-sm font-semibold text-zinc-900 dark:text-zinc-100 ${
-                    item.status === "completed" ? "line-through text-zinc-400 dark:text-zinc-500" : ""
+                  className={`text-sm sm:text-base font-semibold text-zinc-100 ${
+                    item.status === "completed" ? "line-through text-zinc-400" : ""
                   }`}
                 >
                   {item.title}
@@ -311,20 +337,20 @@ function ActionSection({
               </div>
 
               {item.description && (
-                <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed">
                   {item.description}
                 </p>
               )}
 
-              <div className="flex items-center gap-3 text-[11px] text-zinc-500 dark:text-zinc-400 pt-1 flex-wrap">
+              <div className="flex items-center gap-3 text-xs text-zinc-400 pt-1 flex-wrap">
                 {item.deadline && (
                   <span className="inline-flex items-center gap-1">
-                    <CalendarIcon size={12} /> Due: {item.deadline}
+                    <CalendarIcon size={12} className="text-zinc-500" /> Due: {item.deadline}
                   </span>
                 )}
                 {item.sourceDocument && (
-                  <span className="inline-flex items-center gap-1 font-mono text-[10px] bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded">
-                    <DocumentIcon size={11} /> {item.sourceDocument}
+                  <span className="inline-flex items-center gap-1 font-mono text-[11px] bg-[#0c150e] text-zinc-300 border border-[rgba(140,170,120,0.14)] px-2 py-0.5 rounded">
+                    <DocumentIcon size={12} className="text-zinc-400" /> {item.sourceDocument}
                   </span>
                 )}
               </div>
