@@ -9,7 +9,6 @@ import {
 import { ActionCard } from "./ActionCard";
 import { Card, CardHeader, CardTitle, CardContent } from "../ui/card";
 import { Badge } from "../ui/badge";
-import { Button } from "../ui/button";
 import {
   DocumentIcon,
   CheckCircleIcon,
@@ -181,16 +180,14 @@ export function ResultsDashboard({
         </div>
 
         <div className="self-end sm:self-center shrink-0">
-          <Button
+          <button
             type="button"
-            variant="outline"
-            size="sm"
             onClick={onReset}
-            className="text-xs"
+            className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#e8ff47]/[0.06] hover:bg-[#e8ff47]/[0.12] text-zinc-200 hover:text-white border border-[#e8ff47]/20 hover:border-[#e8ff47]/40 backdrop-blur-md text-xs font-medium transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#e8ff47] focus-visible:ring-offset-2 focus-visible:ring-offset-[#04040a] active:scale-[0.99]"
             aria-label="Analyze another document"
           >
-            Analyze another document
-          </Button>
+            <span>Analyze another document</span>
+          </button>
         </div>
       </div>
 
@@ -260,9 +257,13 @@ export function ResultsDashboard({
             </p>
           </div>
           <div className="pt-2">
-            <Button type="button" variant="primary" size="md" onClick={onReset}>
-              Analyze another document
-            </Button>
+            <button
+              type="button"
+              onClick={onReset}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-[#e8ff47]/[0.08] hover:bg-[#e8ff47]/[0.15] text-zinc-100 hover:text-white border border-[#e8ff47]/25 hover:border-[#e8ff47]/45 shadow-xs backdrop-blur-md text-sm font-medium transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#e8ff47] focus-visible:ring-offset-2 focus-visible:ring-offset-[#04040a] active:scale-[0.99]"
+            >
+              <span>Analyze another document</span>
+            </button>
           </div>
         </Card>
       ) : (
@@ -667,17 +668,15 @@ export function ResultsDashboard({
             ? `Extracted ${metrics.totalActions} actions and ${metrics.totalDeadlines} deadlines across ${docCount} documents.`
             : `Extracted ${metrics.totalActions} actions and ${metrics.totalDeadlines} deadlines from ${document.name}.`}
         </p>
-        <Button
+        <button
           type="button"
-          variant="primary"
-          size="md"
           onClick={onReset}
-          className="w-full sm:w-auto"
+          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#e8ff47]/[0.08] hover:bg-[#e8ff47]/[0.15] text-zinc-100 hover:text-white border border-[#e8ff47]/25 hover:border-[#e8ff47]/45 shadow-[0_4px_20px_rgba(0,0,0,0.4),0_0_12px_rgba(232,255,71,0.08)] hover:shadow-[0_4px_24px_rgba(0,0,0,0.5),0_0_20px_rgba(232,255,71,0.18)] backdrop-blur-md text-sm font-medium transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#e8ff47] focus-visible:ring-offset-2 focus-visible:ring-offset-[#04040a] active:scale-[0.99] group w-full sm:w-auto"
           aria-label="Analyze another document"
         >
           <span>Analyze another document</span>
-          <ArrowRightIcon size={14} className="ml-1.5" />
-        </Button>
+          <ArrowRightIcon size={14} className="text-[#e8ff47] transition-transform duration-200 group-hover:translate-x-0.5" />
+        </button>
       </div>
     </div>
   );
