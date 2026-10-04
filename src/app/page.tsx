@@ -1,69 +1,150 @@
-import Image from "next/image";
+"use client";
+
+import * as React from "react";
+import { UploadWorkflow } from "@/components/upload/UploadWorkflow";
+import { ProcessingScreen } from "@/components/processing/ProcessingScreen";
+import { ResultsDashboard } from "@/components/results/ResultsDashboard";
+import { MyActionsView } from "@/components/actions/MyActionsView";
+import { RecentDocumentsView } from "@/components/history/RecentDocumentsView";
+import { AnalysisResult } from "@/lib/types/action";
+
+type NavigationTab = "analyzer" | "actions" | "history";
+type WorkflowStage = "upload" | "processing" | "results";
 
 export default function Home() {
+  const [activeTab, setActiveTab] = React.useState<NavigationTab>("analyzer");
+  const [stage, setStage] = React.useState<WorkflowStage>("upload");
+  const [activeFiles, setActiveFiles] = React.useState<File[]>([]);
+  const [analysisResult, setAnalysisResult] = React.useState<AnalysisResult | null>(null);
+  const [persistenceWarning, setPersistenceWarning] = React.useState<string | undefined>(undefined);
+
+  // Triggered from UploadWorkflow
+  const handleStartAnalysis = (files: File[]) => {
+    setActiveFiles(files);
+    setAnalysisResult(null);
+    setPersistenceWarning(undefined);
+    setStage("processing");
+  };
+
+  // Triggered from ProcessingScreen on completion
+  const handleProcessingComplete = React.useCallback(
+    (result: AnalysisResult, warning?: string) => {
+      setAnalysisResult(result);
+      setPersistenceWarning(warning);
+      setStage("results");
+    },
+    []
+  );
+
+  // Reset workflow back to empty Upload state
+  const handleReset = () => {
+    setActiveFiles([]);
+    setAnalysisResult(null);
+    setPersistenceWarning(undefined);
+    setStage("upload");
+  };
+
+  const handleSelectRecentDoc = (result: AnalysisResult) => {
+    setAnalysisResult(result);
+    setPersistenceWarning(undefined);
+    setActiveTab("analyzer");
+    setStage("results");
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <div className="py-6 sm:py-10 space-y-6">
+      {/* Top Workspace Navigation Tabs */}
+      <div className="flex items-center justify-between border-b border-[rgba(140,170,120,0.14)] pb-4 gap-4 flex-wrap">
+        <nav
+          aria-label="Workspace tabs"
+          className="inline-flex items-center p-1 rounded-xl bg-[#0b120d]/90 backdrop-blur-md border border-[rgba(140,170,120,0.15)] shadow-xs text-xs font-medium"
+        >
+          <button
+            type="button"
+            onClick={() => setActiveTab("analyzer")}
+            className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer ${
+              activeTab === "analyzer"
+                ? "bg-[#0e1911] text-zinc-100 border border-[rgba(140,170,120,0.22)] shadow-xs font-semibold"
+                : "text-zinc-400 hover:text-zinc-200 hover:bg-[#0e1911]/60"
+            }`}
           >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
+            Document Analyzer
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("actions")}
+            className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer ${
+              activeTab === "actions"
+                ? "bg-[#0e1911] text-zinc-100 border border-[rgba(140,170,120,0.22)] shadow-xs font-semibold"
+                : "text-zinc-400 hover:text-zinc-200 hover:bg-[#0e1911]/60"
+            }`}
+          >
+            My Actions
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("history")}
+            className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer ${
+              activeTab === "history"
+                ? "bg-[#0e1911] text-zinc-100 border border-[rgba(140,170,120,0.22)] shadow-xs font-semibold"
+                : "text-zinc-400 hover:text-zinc-200 hover:bg-[#0e1911]/60"
+            }`}
+          >
+            Recent Documents
+          </button>
+        </nav>
+
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#0e1911] text-zinc-400 border border-[rgba(140,170,120,0.14)] text-[11px] font-mono hidden sm:inline-flex">
+          <span className="h-1.5 w-1.5 rounded-full bg-[#e8ff47]/70"></span>
+          Workspace: Anonymous Session
+        </span>
+      </div>
+
+      {/* Tab 1: Document Analyzer Workflow */}
+      {activeTab === "analyzer" && (
+        <>
+          {stage === "upload" && (
+            <UploadWorkflow onStartAnalysis={handleStartAnalysis} />
+          )}
+
+          {stage === "processing" && activeFiles.length > 0 && (
+            <ProcessingScreen
+              files={activeFiles}
+              onComplete={handleProcessingComplete}
+              onCancel={handleReset}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+          )}
+
+          {stage === "results" && analysisResult && (
+            <ResultsDashboard
+              result={analysisResult}
+              warning={persistenceWarning}
+              onReset={handleReset}
+            />
+          )}
+        </>
+      )}
+
+      {/* Tab 2: Consolidated My Actions View */}
+      {activeTab === "actions" && (
+        <MyActionsView
+          onGoToUpload={() => {
+            setActiveTab("analyzer");
+            setStage("upload");
+          }}
+        />
+      )}
+
+      {/* Tab 3: Recent Documents History View */}
+      {activeTab === "history" && (
+        <RecentDocumentsView
+          onSelectDocument={handleSelectRecentDoc}
+          onGoToUpload={() => {
+            setActiveTab("analyzer");
+            setStage("upload");
+          }}
+        />
+      )}
     </div>
   );
 }
