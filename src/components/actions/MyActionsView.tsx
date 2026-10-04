@@ -20,6 +20,9 @@ import {
   ClockIcon,
   TrashIcon,
   XIcon,
+  CheckIcon,
+  CheckSquareIcon,
+  SortAscIcon,
 } from "../ui/icons";
 
 export interface MyActionsViewProps {
@@ -27,7 +30,9 @@ export interface MyActionsViewProps {
   className?: string;
 }
 
-type CategoryFilter = "all" | "upcoming" | "general" | "not_completed";
+export type StatusFilter = "all" | "not_completed" | "completed";
+export type SortOption = "urgency" | "priority" | "title" | "newest";
+export type CategoryFilter = "all" | "academic" | "administrative" | "finance" | "event" | "general";
 
 interface ConfirmModalState {
   isOpen: boolean;
@@ -43,9 +48,16 @@ export function MyActionsView({
   const [loading, setLoading] = React.useState<boolean>(true);
   const [error, setError] = React.useState<string | null>(null);
 
-  // Bulk selection and category filtering state
-  const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
+  // Status, sorting, and category filters
+  const [statusFilter, setStatusFilter] = React.useState<StatusFilter>("all");
   const [categoryFilter, setCategoryFilter] = React.useState<CategoryFilter>("all");
+  const [sortBy, setSortBy] = React.useState<SortOption>("urgency");
+
+  // Multi-select state
+  const [isSelectMode, setIsSelectMode] = React.useState<boolean>(false);
+  const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
+
+  // Delete confirmation modal
   const [confirmModal, setConfirmModal] = React.useState<ConfirmModalState>({
     isOpen: false,
     type: "delete-selected",
@@ -99,7 +111,6 @@ export function MyActionsView({
     };
 
     window.addEventListener("keydown", handleKeyDown);
-    // Auto-focus cancel button for safe keyboard accessibility
     setTimeout(() => {
       cancelButtonRef.current?.focus();
     }, 50);
@@ -110,7 +121,7 @@ export function MyActionsView({
   }, [confirmModal.isOpen]);
 
   // Recalculates grouped actions and metrics
-  const recalculateData = (allTasks: ActionItem[]): MyActionsGrouped => {
+  const recalculateData = (allTasksList: ActionItem[]): MyActionsGrouped => {
     const now = new Date();
     const threeDaysFromNow = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
 
@@ -119,7 +130,7 @@ export function MyActionsView({
     const upcoming: ActionItem[] = [];
     const completed: ActionItem[] = [];
 
-    for (const act of allTasks) {
+    for (const act of allTasksList) {
       if (act.status === "completed") {
         completed.push(act);
         continue;
@@ -146,8 +157,8 @@ export function MyActionsView({
 
     return {
       metrics: {
-        total: allTasks.length,
-        pending: allTasks.length - completed.length,
+        total: allTasksList.length,
+        pending: allTasksList.length - completed.length,
         completed: completed.length,
         overdue: overdue.length,
         dueSoon: dueSoon.length,
@@ -161,7 +172,136 @@ export function MyActionsView({
     };
   };
 
-  // Toggle individual task selection checkbox
+  // All tasks in state
+  const allTasks = React.useMemo(() => {
+    if (!data) return [];
+    return [
+      ...data.groups.overdue,
+      ...data.groups.dueSoon,
+      ...data.groups.upcoming,
+      ...data.groups.completed,
+    ];
+  }, [data]);
+
+  // Priority ranking helper
+  const priorityRank = (priority: string) => {
+    if (priority === "high") return 3;
+    if (priority === "medium") return 2;
+    return 1;
+  };
+
+  // Sort tasks helper
+  const sortTasks = React.useCallback(
+    (tasks: ActionItem[]): ActionItem[] => {
+      const copy = [...tasks];
+      if (sortBy === "priority") {
+        return copy.sort(
+          (a, b) => priorityRank(b.priority) - priorityRank(a.priority)
+        );
+      }
+      if (sortBy === "title") {
+        return copy.sort((a, b) => a.title.localeCompare(b.title));
+      }
+      if (sortBy === "newest") {
+        return copy.reverse();
+      }
+      // "urgency" default: earliest deadline first, then undated
+      return copy.sort((a, b) => {
+        if (!a.deadline && !b.deadline) return 0;
+        if (!a.deadline) return 1;
+        if (!b.deadline) return -1;
+        return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
+      });
+    },
+    [sortBy]
+  );
+
+  // Filter tasks by status and category
+  const filterTasks = React.useCallback(
+    (tasks: ActionItem[]): ActionItem[] => {
+      return tasks.filter((t) => {
+        // Status filter
+        if (statusFilter === "not_completed" && t.status === "completed") {
+          return false;
+        }
+        if (statusFilter === "completed" && t.status !== "completed") {
+          return false;
+        }
+
+        // Category filter
+        if (categoryFilter !== "all" && t.category !== categoryFilter) {
+          return false;
+        }
+
+        return true;
+      });
+    },
+    [statusFilter, categoryFilter]
+  );
+
+  // Filtered and sorted tasks for the current view
+  const visibleTasks = React.useMemo(() => {
+    return sortTasks(filterTasks(allTasks));
+  }, [allTasks, filterTasks, sortTasks]);
+
+  // Separate pending (not completed) and completed items within visible set
+  const visibleNotCompleted = React.useMemo(() => {
+    return visibleTasks.filter((t) => t.status !== "completed");
+  }, [visibleTasks]);
+
+  const visibleCompleted = React.useMemo(() => {
+    return visibleTasks.filter((t) => t.status === "completed");
+  }, [visibleTasks]);
+
+  // Breakdown of visible pending tasks by urgency for structured display
+  const overduePending = React.useMemo(() => {
+    const now = new Date();
+    return visibleNotCompleted.filter((t) => {
+      if (!t.deadline) return false;
+      const d = new Date(t.deadline);
+      return !isNaN(d.getTime()) && d < now;
+    });
+  }, [visibleNotCompleted]);
+
+  const dueSoonPending = React.useMemo(() => {
+    const now = new Date();
+    const threeDays = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+    return visibleNotCompleted.filter((t) => {
+      if (!t.deadline) return false;
+      const d = new Date(t.deadline);
+      return !isNaN(d.getTime()) && d >= now && d <= threeDays;
+    });
+  }, [visibleNotCompleted]);
+
+  const upcomingPending = React.useMemo(() => {
+    const now = new Date();
+    const threeDays = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+    return visibleNotCompleted.filter((t) => {
+      if (!t.deadline) return true;
+      const d = new Date(t.deadline);
+      return isNaN(d.getTime()) || d > threeDays;
+    });
+  }, [visibleNotCompleted]);
+
+  // Checkbox toggle: Completed <-> Not Completed (Direct 1-Click Action)
+  const handleToggleStatus = async (action: ActionItem) => {
+    const nextStatus: ActionStatus =
+      action.status === "completed" ? "pending" : "completed";
+
+    // Optimistic UI update
+    setData((prev) => {
+      if (!prev) return prev;
+      const updated = allTasks.map((item) =>
+        item.id === action.id ? { ...item, status: nextStatus } : item
+      );
+      return recalculateData(updated);
+    });
+
+    // Sync with backend
+    await updateActionStatus(action.id, nextStatus as "pending" | "completed");
+  };
+
+  // Multi-Select: Toggle individual item
   const handleToggleSelect = (id: string) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -174,96 +314,25 @@ export function MyActionsView({
     });
   };
 
-  // Single task status toggle (quick action)
-  const handleToggleStatus = async (action: ActionItem) => {
-    const nextStatus: ActionStatus =
-      action.status === "completed" ? "pending" : "completed";
-
-    setData((prev) => {
-      if (!prev) return prev;
-      const allTasks = [
-        ...prev.groups.overdue,
-        ...prev.groups.dueSoon,
-        ...prev.groups.upcoming,
-        ...prev.groups.completed,
-      ].map((item) =>
-        item.id === action.id ? { ...item, status: nextStatus } : item
-      );
-      return recalculateData(allTasks);
-    });
-
-    if (nextStatus === "completed") {
-      setSelectedIds((prev) => {
-        const next = new Set(prev);
-        next.delete(action.id);
-        return next;
-      });
-    }
-
-    await updateActionStatus(action.id, nextStatus as "pending" | "completed");
+  // Multi-Select: Select All Visible
+  const handleSelectAllVisible = () => {
+    const ids = visibleTasks.map((t) => t.id);
+    setSelectedIds(new Set(ids));
+    setIsSelectMode(true);
   };
 
-  // All tasks currently represented in state
-  const allTasks = React.useMemo(() => {
-    if (!data) return [];
-    return [
-      ...data.groups.overdue,
-      ...data.groups.dueSoon,
-      ...data.groups.upcoming,
-      ...data.groups.completed,
-    ];
-  }, [data]);
-
-  // Tasks in current category context
-  const getTasksInContext = React.useCallback(
-    (tasks: ActionItem[]): ActionItem[] => {
-      if (categoryFilter === "all") return tasks;
-      if (categoryFilter === "upcoming") {
-        return tasks.filter((t) => Boolean(t.deadline));
-      }
-      if (categoryFilter === "general") {
-        return tasks.filter((t) => !t.deadline || t.category === "general");
-      }
-      if (categoryFilter === "not_completed") {
-        return tasks.filter((t) => t.status !== "completed");
-      }
-      return tasks;
-    },
-    [categoryFilter]
-  );
-
-  const contextTasks = React.useMemo(
-    () => getTasksInContext(allTasks),
-    [allTasks, getTasksInContext]
-  );
-
-  const actionableTasksInContext = React.useMemo(
-    () => contextTasks.filter((t) => t.status !== "completed"),
-    [contextTasks]
-  );
-
-  const upcomingCount = React.useMemo(
-    () => allTasks.filter((t) => Boolean(t.deadline)).length,
-    [allTasks]
-  );
-
-  const generalCount = React.useMemo(
-    () => allTasks.filter((t) => !t.deadline || t.category === "general").length,
-    [allTasks]
-  );
-
-  const notCompletedCount = React.useMemo(
-    () => allTasks.filter((t) => t.status !== "completed").length,
-    [allTasks]
-  );
-
-  // Switch category filter and clear selection state to prevent stale selected IDs
-  const handleFilterChange = React.useCallback((filter: CategoryFilter) => {
-    setCategoryFilter(filter);
+  // Multi-Select: Deselect All
+  const handleDeselectAll = () => {
     setSelectedIds(new Set());
-  }, []);
+  };
 
-  // Bulk Action: Mark Selected as Completed
+  // Multi-Select: Exit Selection Mode
+  const handleExitSelectMode = () => {
+    setIsSelectMode(false);
+    setSelectedIds(new Set());
+  };
+
+  // Batch Action: Mark Selected as Completed
   const handleMarkSelectedCompleted = async () => {
     if (selectedIds.size === 0 || !data) return;
     const idsToComplete = Array.from(selectedIds);
@@ -277,47 +346,40 @@ export function MyActionsView({
       return recalculateData(updated);
     });
 
-    // Clear selection
     setSelectedIds(new Set());
 
     // Sync with backend
     await bulkUpdateActionStatus(idsToComplete, "completed");
   };
 
-  // Bulk Action: Mark All in Current Context as Completed
-  const handleMarkAllCompleted = async () => {
-    if (!data || actionableTasksInContext.length === 0) return;
-    const idsToComplete = actionableTasksInContext.map((t) => t.id);
-    const idSet = new Set(idsToComplete);
+  // Batch Action: Mark Selected as Not Completed (Pending)
+  const handleMarkSelectedPending = async () => {
+    if (selectedIds.size === 0 || !data) return;
+    const idsToPending = Array.from(selectedIds);
 
     // Optimistic UI update
     setData((prev) => {
       if (!prev) return prev;
       const updated = allTasks.map((t) =>
-        idSet.has(t.id) ? { ...t, status: "completed" as ActionStatus } : t
+        selectedIds.has(t.id) ? { ...t, status: "pending" as ActionStatus } : t
       );
       return recalculateData(updated);
     });
 
-    // Clear completed items from selection
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      idsToComplete.forEach((id) => next.delete(id));
-      return next;
-    });
+    setSelectedIds(new Set());
 
     // Sync with backend
-    await bulkUpdateActionStatus(idsToComplete, "completed");
+    await bulkUpdateActionStatus(idsToPending, "pending");
   };
 
-  // Bulk Action: Confirm and Delete
+  // Batch Action: Confirm and Delete
   const handleConfirmDelete = async () => {
     if (!data) return;
     let idsToDelete: string[] = [];
     const isDeleteAll = confirmModal.type === "delete-all";
 
     if (isDeleteAll) {
-      idsToDelete = contextTasks.map((t) => t.id);
+      idsToDelete = visibleTasks.map((t) => t.id);
     } else {
       idsToDelete = Array.from(selectedIds);
     }
@@ -336,7 +398,6 @@ export function MyActionsView({
       return recalculateData(remaining);
     });
 
-    // Clear deleted IDs from selection
     setSelectedIds((prev) => {
       const next = new Set(prev);
       idsToDelete.forEach((id) => next.delete(id));
@@ -346,7 +407,7 @@ export function MyActionsView({
     setConfirmModal({ isOpen: false, type: "delete-selected" });
 
     // Sync with backend
-    await bulkDeleteActions(idsToDelete, isDeleteAll && categoryFilter === "all");
+    await bulkDeleteActions(idsToDelete, isDeleteAll && statusFilter === "all" && categoryFilter === "all");
   };
 
   if (loading) {
@@ -377,190 +438,301 @@ export function MyActionsView({
     );
   }
 
-  const { metrics, groups } = data;
-  const hasAny = metrics.total > 0;
+  const { metrics } = data;
+  const hasAnyTasks = metrics.total > 0;
   const selectedCount = selectedIds.size;
-
-  // Filtered sections according to categoryFilter
-  const overdueItems = getTasksInContext(groups.overdue);
-  const dueSoonItems = getTasksInContext(groups.dueSoon);
-  const upcomingItems = getTasksInContext(groups.upcoming);
-  const completedItems = getTasksInContext(groups.completed);
+  const allVisibleSelected =
+    visibleTasks.length > 0 && visibleTasks.every((t) => selectedIds.has(t.id));
 
   return (
-    <div className={`space-y-6 sm:space-y-8 animate-fade-in ${className}`}>
-      {/* 1. Header with Stats */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-5 rounded-xl border border-[rgba(140,170,120,0.14)] bg-[#0b120d] shadow-xs">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-serif font-normal tracking-tight text-zinc-100">
-            My Actions
-          </h1>
-          <p className="text-xs sm:text-sm text-zinc-400 mt-1">
-            Consolidated tasks and deadlines extracted across your recent documents.
-          </p>
-        </div>
-        {onGoToUpload && (
-          <button
-            type="button"
-            onClick={onGoToUpload}
-            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#e8ff47]/[0.08] hover:bg-[#e8ff47]/[0.16] text-zinc-100 hover:text-white border border-[#e8ff47]/25 hover:border-[#e8ff47]/45 shadow-xs backdrop-blur-md text-xs font-medium transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#e8ff47] focus-visible:ring-offset-2 focus-visible:ring-offset-[#04040a] self-start sm:self-center shrink-0 active:scale-[0.99]"
-          >
-            <span>+ Analyze New Document</span>
-          </button>
-        )}
-      </div>
-
-      {/* 2. Metrics Row */}
+    <div className={`space-y-6 animate-fade-in ${className}`}>
+      {/* 1. Interactive Metric Cards: Clear Distinction of Total, Not Completed & Completed */}
       <section aria-label="Action status summary" className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-        <Card className="p-3.5 sm:p-5">
-          <span className="text-[11px] sm:text-xs font-medium text-zinc-400 uppercase tracking-wider">
-            Total Tasks
-          </span>
+        {/* Total Tasks */}
+        <button
+          type="button"
+          onClick={() => setStatusFilter("all")}
+          className={`p-3.5 sm:p-5 rounded-2xl border text-left transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e8ff47]/60 ${
+            statusFilter === "all"
+              ? "bg-[#0e1c12] border-[#e8ff47]/40 shadow-[0_0_15px_rgba(232,255,71,0.08)]"
+              : "bg-[#0c150e]/90 border-[rgba(140,170,120,0.14)] hover:border-[rgba(140,170,120,0.3)] hover:bg-[#0e1911]"
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] sm:text-xs font-medium text-zinc-400 uppercase tracking-wider">
+              Total Tasks
+            </span>
+            {statusFilter === "all" && (
+              <span className="h-1.5 w-1.5 rounded-full bg-[#e8ff47] shadow-[0_0_6px_rgba(232,255,71,0.8)]" />
+            )}
+          </div>
           <div className="mt-2 text-2xl sm:text-3xl font-bold tracking-tight text-zinc-100">
             {metrics.total}
           </div>
-        </Card>
+          <span className="text-[10px] text-zinc-500 mt-1 block">All workspace tasks</span>
+        </button>
 
-        <Card className="p-3.5 sm:p-5 border-rose-900/40">
-          <span className="text-[11px] sm:text-xs font-medium text-rose-400 uppercase tracking-wider">
-            Overdue
-          </span>
-          <div className="mt-2 text-2xl sm:text-3xl font-bold tracking-tight text-rose-400">
-            {metrics.overdue}
+        {/* Not Completed / Pending */}
+        <button
+          type="button"
+          onClick={() => setStatusFilter("not_completed")}
+          className={`p-3.5 sm:p-5 rounded-2xl border text-left transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/60 ${
+            statusFilter === "not_completed"
+              ? "bg-[#18190d] border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.1)]"
+              : "bg-[#0c150e]/90 border-amber-900/30 hover:border-amber-700/50 hover:bg-[#12160e]"
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] sm:text-xs font-medium text-amber-400 uppercase tracking-wider">
+              Not Completed
+            </span>
+            {statusFilter === "not_completed" && (
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(245,158,11,0.8)]" />
+            )}
           </div>
-        </Card>
-
-        <Card className="p-3.5 sm:p-5 border-amber-900/40">
-          <span className="text-[11px] sm:text-xs font-medium text-amber-400 uppercase tracking-wider">
-            Due Soon
-          </span>
           <div className="mt-2 text-2xl sm:text-3xl font-bold tracking-tight text-amber-400">
-            {metrics.dueSoon}
+            {metrics.pending}
           </div>
-        </Card>
+          <span className="text-[10px] text-amber-500/70 mt-1 block">Active obligations</span>
+        </button>
 
-        <Card className="p-3.5 sm:p-5 border-emerald-900/40">
-          <span className="text-[11px] sm:text-xs font-medium text-emerald-400 uppercase tracking-wider">
-            Completed
-          </span>
+        {/* Completed */}
+        <button
+          type="button"
+          onClick={() => setStatusFilter("completed")}
+          className={`p-3.5 sm:p-5 rounded-2xl border text-left transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 ${
+            statusFilter === "completed"
+              ? "bg-[#0e1e14] border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.1)]"
+              : "bg-[#0c150e]/90 border-emerald-900/30 hover:border-emerald-700/50 hover:bg-[#0e1710]"
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] sm:text-xs font-medium text-emerald-400 uppercase tracking-wider">
+              Completed
+            </span>
+            {statusFilter === "completed" && (
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(16,185,129,0.8)]" />
+            )}
+          </div>
           <div className="mt-2 text-2xl sm:text-3xl font-bold tracking-tight text-emerald-400">
             {metrics.completed}
           </div>
-        </Card>
+          <span className="text-[10px] text-emerald-500/70 mt-1 block">Accomplished tasks</span>
+        </button>
+
+        {/* Overdue / Due Soon Attention */}
+        <button
+          type="button"
+          onClick={() => {
+            setStatusFilter("not_completed");
+            setSortBy("urgency");
+          }}
+          className="p-3.5 sm:p-5 rounded-2xl border bg-[#0c150e]/90 border-rose-900/30 hover:border-rose-700/50 hover:bg-[#160e10] text-left transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/60"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] sm:text-xs font-medium text-rose-400 uppercase tracking-wider">
+              Urgent Attention
+            </span>
+            <AlertCircleIcon size={14} className="text-rose-400" />
+          </div>
+          <div className="mt-2 text-2xl sm:text-3xl font-bold tracking-tight text-rose-400">
+            {metrics.overdue + metrics.dueSoon}
+          </div>
+          <span className="text-[10px] text-rose-400/70 mt-1 block">
+            {metrics.overdue} overdue · {metrics.dueSoon} due soon
+          </span>
+        </button>
       </section>
 
-      {/* 3. Bulk Action Controls Toolbar */}
-      {hasAny && (
+      {/* 3. Controls Bar: Status Filter Tabs, Sorting, & Multi-Select Trigger */}
+      {hasAnyTasks && (
         <section
-          aria-label="Bulk task actions"
-          className="p-3.5 sm:p-4 rounded-xl border border-[rgba(140,170,120,0.15)] bg-[#0b120d]/90 backdrop-blur-md shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4"
+          aria-label="Filter and sort controls"
+          className="p-3.5 sm:p-4 rounded-2xl border border-[rgba(140,170,120,0.16)] bg-[#0b120d]/90 backdrop-blur-md shadow-xs space-y-3 sm:space-y-0 sm:flex sm:items-center sm:justify-between sm:gap-4"
         >
-          {/* Category Filter Tabs: Upcoming, General & Not Completed */}
-          <div className="flex items-center gap-2.5 flex-wrap">
-            <span className="text-xs text-zinc-400 font-mono hidden sm:inline">Category:</span>
+          {/* Primary Status Tabs: All Tasks, Not Completed, Completed */}
+          <div className="flex items-center gap-1.5 flex-wrap">
             <div
               role="tablist"
-              aria-label="Filter actions by category"
-              className="inline-flex items-center p-1 rounded-xl bg-[#08120c] border border-[rgba(140,170,120,0.15)] text-xs flex-wrap gap-1"
+              aria-label="Filter by task status"
+              className="inline-flex items-center p-1 rounded-xl bg-[#08120c] border border-[rgba(140,170,120,0.15)] text-xs gap-1"
             >
               <button
                 type="button"
                 role="tab"
-                aria-selected={categoryFilter === "all"}
-                onClick={() => handleFilterChange("all")}
+                aria-selected={statusFilter === "all"}
+                onClick={() => setStatusFilter("all")}
                 className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer font-medium ${
-                  categoryFilter === "all"
-                    ? "bg-[#0e1911] text-zinc-100 border border-[rgba(140,170,120,0.22)] shadow-2xs font-semibold"
-                    : "text-zinc-400 hover:text-zinc-200 hover:bg-[#0e1911]/60"
+                  statusFilter === "all"
+                    ? "bg-[#14261a] text-[#e8ff47] border border-[rgba(140,170,120,0.3)] shadow-2xs font-semibold"
+                    : "text-zinc-400 hover:text-zinc-200 hover:bg-[#0e1911]"
                 }`}
               >
-                All ({allTasks.length})
+                All Tasks ({metrics.total})
               </button>
+
               <button
                 type="button"
                 role="tab"
-                aria-selected={categoryFilter === "upcoming"}
-                onClick={() => handleFilterChange("upcoming")}
+                aria-selected={statusFilter === "not_completed"}
+                onClick={() => setStatusFilter("not_completed")}
                 className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer font-medium ${
-                  categoryFilter === "upcoming"
-                    ? "bg-[#0e1911] text-zinc-100 border border-[rgba(140,170,120,0.22)] shadow-2xs font-semibold"
-                    : "text-zinc-400 hover:text-zinc-200 hover:bg-[#0e1911]/60"
+                  statusFilter === "not_completed"
+                    ? "bg-[#18190d] text-amber-300 border border-amber-500/40 shadow-2xs font-semibold"
+                    : "text-zinc-400 hover:text-amber-200 hover:bg-[#0e1911]"
                 }`}
               >
-                Upcoming ({upcomingCount})
+                Not Completed ({metrics.pending})
               </button>
+
               <button
                 type="button"
                 role="tab"
-                aria-selected={categoryFilter === "general"}
-                onClick={() => handleFilterChange("general")}
+                aria-selected={statusFilter === "completed"}
+                onClick={() => setStatusFilter("completed")}
                 className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer font-medium ${
-                  categoryFilter === "general"
-                    ? "bg-[#0e1911] text-zinc-100 border border-[rgba(140,170,120,0.22)] shadow-2xs font-semibold"
-                    : "text-zinc-400 hover:text-zinc-200 hover:bg-[#0e1911]/60"
+                  statusFilter === "completed"
+                    ? "bg-[#0e1e14] text-emerald-300 border border-emerald-500/40 shadow-2xs font-semibold"
+                    : "text-zinc-400 hover:text-emerald-200 hover:bg-[#0e1911]"
                 }`}
               >
-                General ({generalCount})
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={categoryFilter === "not_completed"}
-                onClick={() => handleFilterChange("not_completed")}
-                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer font-medium ${
-                  categoryFilter === "not_completed"
-                    ? "bg-[#0e1911] text-zinc-100 border border-[rgba(140,170,120,0.22)] shadow-2xs font-semibold"
-                    : "text-zinc-400 hover:text-zinc-200 hover:bg-[#0e1911]/60"
-                }`}
-              >
-                Not Completed ({notCompletedCount})
+                Completed ({metrics.completed})
               </button>
             </div>
 
-            {/* Selection Counter Pill */}
-            <span
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono transition-colors ${
-                selectedCount > 0
-                  ? "bg-[#e8ff47]/10 text-[#e8ff47] border border-[#e8ff47]/25 font-semibold"
-                  : "bg-[#0e1911] text-zinc-500 border border-[rgba(140,170,120,0.1)]"
-              }`}
-            >
-              <span
-                className={`h-1.5 w-1.5 rounded-full ${
-                  selectedCount > 0 ? "bg-[#e8ff47]" : "bg-zinc-600"
-                }`}
-              />
-              {selectedCount} selected
-            </span>
+            {/* Category Filter Pills (Compact Dropdown/Selector) */}
+            <div className="flex items-center gap-1 pl-1">
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value as CategoryFilter)}
+                className="px-2.5 py-1.5 rounded-xl bg-[#08120c] border border-[rgba(140,170,120,0.18)] text-zinc-300 text-xs cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#e8ff47]/60"
+                aria-label="Filter by category"
+              >
+                <option value="all">All Categories</option>
+                <option value="academic">Academic</option>
+                <option value="administrative">Administrative</option>
+                <option value="finance">Finance</option>
+                <option value="event">Event</option>
+                <option value="general">General</option>
+              </select>
+            </div>
           </div>
 
-          {/* Action Buttons Toolbar */}
+          {/* Right Side Controls: Sort Selector & Multi-Select Toggle */}
+          <div className="flex items-center gap-2 flex-wrap justify-between sm:justify-end">
+            {/* Sorting Dropdown */}
+            <div className="flex items-center gap-1.5">
+              <span className="text-zinc-500 text-xs hidden md:inline">Sort:</span>
+              <div className="relative inline-flex items-center">
+                <SortAscIcon size={14} className="absolute left-2.5 text-zinc-400 pointer-events-none" />
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as SortOption)}
+                  className="pl-7 pr-3 py-1.5 rounded-xl bg-[#08120c] border border-[rgba(140,170,120,0.18)] text-zinc-200 text-xs font-medium cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#e8ff47]/60"
+                  aria-label="Sort actions"
+                >
+                  <option value="urgency">Urgency (Due Soonest)</option>
+                  <option value="priority">Priority (High → Low)</option>
+                  <option value="title">Title (A → Z)</option>
+                  <option value="newest">Newest Added</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Multi-Select Mode Button */}
+            <button
+              type="button"
+              onClick={() => {
+                if (isSelectMode) {
+                  handleExitSelectMode();
+                } else {
+                  setIsSelectMode(true);
+                }
+              }}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all duration-150 cursor-pointer border select-none ${
+                isSelectMode
+                  ? "bg-[#132418] text-[#e8ff47] border-[#e8ff47]/50 shadow-[0_0_10px_rgba(232,255,71,0.15)] font-semibold"
+                  : "bg-[#08120c] text-zinc-300 hover:text-white hover:bg-[#0e1911] border-[rgba(140,170,120,0.2)]"
+              }`}
+              aria-label={isSelectMode ? "Exit multi-select mode" : "Enter multi-select mode"}
+            >
+              {isSelectMode ? (
+                <>
+                  <XIcon size={14} />
+                  <span>Done Selecting</span>
+                </>
+              ) : (
+                <>
+                  <CheckSquareIcon size={14} className="text-zinc-400" />
+                  <span>Select Tasks</span>
+                </>
+              )}
+            </button>
+
+            {/* Quick Upload / Analyze Action */}
+            {onGoToUpload && (
+              <button
+                type="button"
+                onClick={onGoToUpload}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all duration-150 cursor-pointer bg-[#e8ff47]/[0.08] hover:bg-[#e8ff47]/[0.18] text-[#e8ff47] hover:text-white border border-[#e8ff47]/25 hover:border-[#e8ff47]/45 shadow-2xs active:scale-[0.98]"
+                aria-label="Analyze new document"
+              >
+                <span>+ Analyze New</span>
+              </button>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* 4. Dedicated Multi-Select Floating / Sticky Action Bar */}
+      {isSelectMode && (
+        <section
+          aria-label="Batch actions toolbar"
+          className="sticky top-20 z-20 p-3 sm:p-4 rounded-2xl border border-[#e8ff47]/30 bg-[#08130c]/95 backdrop-blur-xl shadow-[0_12px_32px_rgba(0,0,0,0.7)] flex flex-wrap items-center justify-between gap-3 animate-in fade-in-0 slide-in-from-top-2 duration-150"
+        >
+          {/* Left: Counter & Select All Controls */}
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold bg-[#e8ff47]/15 text-[#e8ff47] border border-[#e8ff47]/30">
+              <span className="h-2 w-2 rounded-full bg-[#e8ff47] shadow-[0_0_6px_rgba(232,255,71,0.8)]" />
+              {selectedCount} of {visibleTasks.length} Selected
+            </span>
+
+            <button
+              type="button"
+              onClick={allVisibleSelected ? handleDeselectAll : handleSelectAllVisible}
+              className="text-xs text-zinc-300 hover:text-white hover:underline cursor-pointer font-medium ml-1"
+            >
+              {allVisibleSelected ? "Deselect All" : "Select All Visible"}
+            </button>
+          </div>
+
+          {/* Right: Batch Execution Buttons */}
           <div className="flex items-center gap-2 flex-wrap">
-            {/* Safe / Positive: Complete Selected */}
+            {/* Complete Selected */}
             <button
               type="button"
               disabled={selectedCount === 0}
               onClick={handleMarkSelectedCompleted}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed bg-[#0e1911] text-emerald-300 hover:text-emerald-100 hover:bg-[#132217] border border-[rgba(140,170,120,0.22)] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50"
-              aria-label="Mark selected tasks as completed"
-            >
-              <CheckCircleIcon size={14} className="text-[#e8ff47]" />
-              <span>Complete Selected</span>
-            </button>
-
-            {/* Safe / Positive: Complete All */}
-            <button
-              type="button"
-              disabled={actionableTasksInContext.length === 0}
-              onClick={handleMarkAllCompleted}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed bg-[#0e1911] text-zinc-200 hover:text-white hover:bg-[#132217] border border-[rgba(140,170,120,0.18)] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50"
-              aria-label="Mark all actionable tasks as completed"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all duration-150 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed bg-emerald-950/40 text-emerald-300 hover:text-emerald-100 hover:bg-emerald-950/70 border border-emerald-700/40 active:scale-[0.98]"
+              aria-label="Mark selected as completed"
             >
               <CheckCircleIcon size={14} className="text-emerald-400" />
-              <span>Complete All</span>
+              <span>Mark Completed</span>
             </button>
 
-            {/* Destructive: Delete Selected */}
+            {/* Mark Selected as Incomplete / Pending */}
+            <button
+              type="button"
+              disabled={selectedCount === 0}
+              onClick={handleMarkSelectedPending}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all duration-150 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed bg-[#0e1911] text-amber-300 hover:text-amber-100 hover:bg-[#142217] border border-amber-700/40 active:scale-[0.98]"
+              aria-label="Mark selected as not completed"
+            >
+              <ClockIcon size={14} className="text-amber-400" />
+              <span>Mark Not Completed</span>
+            </button>
+
+            {/* Delete Selected */}
             <button
               type="button"
               disabled={selectedCount === 0}
@@ -571,130 +743,180 @@ export function MyActionsView({
                   count: selectedCount,
                 })
               }
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed bg-rose-950/20 text-rose-300 hover:text-rose-100 hover:bg-rose-950/40 border border-rose-900/30 hover:border-rose-900/50 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/50"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all duration-150 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed bg-rose-950/30 text-rose-300 hover:text-rose-100 hover:bg-rose-950/60 border border-rose-800/40 active:scale-[0.98]"
               aria-label="Delete selected tasks"
             >
               <TrashIcon size={14} />
-              <span>Delete Selected</span>
+              <span>Delete</span>
             </button>
 
-            {/* Destructive: Delete All */}
+            {/* Exit Multi-Select */}
             <button
               type="button"
-              disabled={contextTasks.length === 0}
-              onClick={() =>
-                setConfirmModal({
-                  isOpen: true,
-                  type: "delete-all",
-                  count: contextTasks.length,
-                })
-              }
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed bg-rose-950/20 text-rose-300 hover:text-rose-100 hover:bg-rose-950/40 border border-rose-900/30 hover:border-rose-900/50 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/50"
-              aria-label="Delete all tasks in this view"
+              onClick={handleExitSelectMode}
+              className="p-1.5 text-zinc-400 hover:text-white rounded-lg hover:bg-[#0e1911] cursor-pointer ml-1"
+              aria-label="Exit selection mode"
             >
-              <TrashIcon size={14} />
-              <span>Delete All</span>
+              <XIcon size={16} />
             </button>
           </div>
         </section>
       )}
 
-      {/* 4. Empty State */}
-      {!hasAny || contextTasks.length === 0 ? (
+      {/* 5. Empty State */}
+      {!hasAnyTasks || visibleTasks.length === 0 ? (
         <Card className="p-10 text-center space-y-4 max-w-lg mx-auto border-[rgba(140,170,120,0.14)] bg-[#0c150e]/80">
-          <div className="flex h-12 w-12 mx-auto items-center justify-center rounded-xl bg-[#0e1911] text-zinc-300 border border-[rgba(140,170,120,0.15)]">
-            <CheckCircleIcon size={24} />
+          <div className="flex h-12 w-12 mx-auto items-center justify-center rounded-2xl bg-[#0e1911] text-zinc-300 border border-[rgba(140,170,120,0.18)]">
+            <CheckCircleIcon size={24} className="text-[#e8ff47]" />
           </div>
           <div className="space-y-1">
             <h2 className="text-base sm:text-lg font-serif font-normal text-zinc-100">
-              {categoryFilter === "not_completed"
-                ? "No pending tasks"
-                : "No actions yet"}
+              {statusFilter === "not_completed"
+                ? "All tasks completed!"
+                : statusFilter === "completed"
+                ? "No completed tasks yet"
+                : "No actions found"}
             </h2>
             <p className="text-xs sm:text-sm text-zinc-400 max-w-sm mx-auto">
-              {categoryFilter === "not_completed"
-                ? "All tasks are completed. Switch to All or Completed to review them."
-                : "Tasks extracted from analyzed documents will appear here."}
+              {statusFilter === "not_completed"
+                ? "You have no active pending tasks. Switch to All Tasks or Completed to review finished items."
+                : statusFilter === "completed"
+                ? "Check off tasks from your list as you complete them to see them here."
+                : "Upload or analyze a document to automatically extract actionable items."}
             </p>
           </div>
-          {onGoToUpload && (
-            <div className="pt-2">
+
+          <div className="flex items-center justify-center gap-2 pt-2">
+            {statusFilter !== "all" && (
+              <button
+                type="button"
+                onClick={() => setStatusFilter("all")}
+                className="px-3.5 py-1.5 rounded-xl bg-[#0e1911] hover:bg-[#132418] text-zinc-200 text-xs font-medium border border-[rgba(140,170,120,0.2)] cursor-pointer"
+              >
+                View All Tasks
+              </button>
+            )}
+            {onGoToUpload && (
               <button
                 type="button"
                 onClick={onGoToUpload}
-                className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-[#e8ff47]/[0.1] hover:bg-[#e8ff47]/[0.2] text-zinc-100 hover:text-white border border-[#e8ff47]/30 hover:border-[#e8ff47]/50 text-xs sm:text-sm font-medium transition-all shadow-xs cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#e8ff47]"
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-[#e8ff47]/[0.1] hover:bg-[#e8ff47]/[0.2] text-zinc-100 hover:text-white border border-[#e8ff47]/30 hover:border-[#e8ff47]/50 text-xs sm:text-sm font-medium transition-all shadow-xs cursor-pointer"
               >
                 <span>Upload a Document</span>
               </button>
-            </div>
-          )}
+            )}
+          </div>
         </Card>
       ) : (
-        /* 5. Categorized Action Sections */
-        <div className="space-y-6">
-          {/* Overdue */}
-          {overdueItems.length > 0 && (
-            <ActionSection
-              title="Overdue"
-              icon={<AlertCircleIcon size={16} className="text-rose-400" />}
-              badgeVariant="danger"
-              items={overdueItems}
-              selectedIds={selectedIds}
-              onToggleSelect={handleToggleSelect}
-              onToggleStatus={handleToggleStatus}
-            />
+        /* 6. Distinguishing Total, Not Completed & Completed in List Display */
+        <div className="space-y-8">
+          {/* SECTION A: NOT COMPLETED TASKS (When viewing 'all' or 'not_completed') */}
+          {(statusFilter === "all" || statusFilter === "not_completed") && visibleNotCompleted.length > 0 && (
+            <div className="space-y-6">
+              {/* Section Header if viewing 'all' to clearly distinguish active obligations */}
+              {statusFilter === "all" && (
+                <div className="flex items-center justify-between border-b border-[rgba(140,170,120,0.18)] pb-2.5">
+                  <div className="flex items-center gap-2">
+                    <ClockIcon size={16} className="text-amber-400" />
+                    <h2 className="text-base font-serif font-normal text-zinc-100 tracking-tight">
+                      Active Obligations (Not Completed)
+                    </h2>
+                    <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-amber-950/40 text-amber-300 border border-amber-800/40 font-semibold">
+                      {visibleNotCompleted.length}
+                    </span>
+                  </div>
+
+                  <span className="text-xs text-zinc-500 hidden sm:inline">
+                    Click checkbox to complete
+                  </span>
+                </div>
+              )}
+
+              {/* Overdue Items (if any) */}
+              {overduePending.length > 0 && (
+                <ActionSectionGroup
+                  title="Overdue"
+                  icon={<AlertCircleIcon size={16} className="text-rose-400" />}
+                  badgeVariant="danger"
+                  badgeCount={overduePending.length}
+                  items={overduePending}
+                  isSelectMode={isSelectMode}
+                  selectedIds={selectedIds}
+                  onToggleSelect={handleToggleSelect}
+                  onToggleStatus={handleToggleStatus}
+                />
+              )}
+
+              {/* Due Soon Items (if any) */}
+              {dueSoonPending.length > 0 && (
+                <ActionSectionGroup
+                  title="Due Soon (Next 3 Days)"
+                  icon={<ClockIcon size={16} className="text-amber-400" />}
+                  badgeVariant="warning"
+                  badgeCount={dueSoonPending.length}
+                  items={dueSoonPending}
+                  isSelectMode={isSelectMode}
+                  selectedIds={selectedIds}
+                  onToggleSelect={handleToggleSelect}
+                  onToggleStatus={handleToggleStatus}
+                />
+              )}
+
+              {/* Upcoming & General Items */}
+              {upcomingPending.length > 0 && (
+                <ActionSectionGroup
+                  title={
+                    overduePending.length > 0 || dueSoonPending.length > 0
+                      ? "Upcoming & General Tasks"
+                      : "Pending Tasks"
+                  }
+                  icon={<CalendarIcon size={16} className="text-[#e8ff47]" />}
+                  badgeCount={upcomingPending.length}
+                  items={upcomingPending}
+                  isSelectMode={isSelectMode}
+                  selectedIds={selectedIds}
+                  onToggleSelect={handleToggleSelect}
+                  onToggleStatus={handleToggleStatus}
+                />
+              )}
+            </div>
           )}
 
-          {/* Due Soon */}
-          {dueSoonItems.length > 0 && (
-            <ActionSection
-              title="Due Soon"
-              icon={<ClockIcon size={16} className="text-amber-400" />}
-              badgeVariant="warning"
-              items={dueSoonItems}
-              selectedIds={selectedIds}
-              onToggleSelect={handleToggleSelect}
-              onToggleStatus={handleToggleStatus}
-            />
-          )}
+          {/* SECTION B: COMPLETED TASKS (Distinct visual treatment & section) */}
+          {(statusFilter === "all" || statusFilter === "completed") && visibleCompleted.length > 0 && (
+            <div className="space-y-4 pt-2">
+              <div className="flex items-center justify-between border-b border-[rgba(140,170,120,0.18)] pb-2.5">
+                <div className="flex items-center gap-2">
+                  <CheckCircleIcon size={16} className="text-emerald-400" />
+                  <h2 className="text-base font-serif font-normal text-zinc-100 tracking-tight">
+                    Completed Tasks
+                  </h2>
+                  <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-emerald-950/40 text-emerald-300 border border-emerald-800/40 font-semibold">
+                    {visibleCompleted.length}
+                  </span>
+                </div>
 
-          {/* Upcoming & General */}
-          {upcomingItems.length > 0 && (
-            <ActionSection
-              title={
-                categoryFilter === "general"
-                  ? "General Tasks"
-                  : categoryFilter === "upcoming"
-                  ? "Upcoming Deadlines"
-                  : categoryFilter === "not_completed"
-                  ? "Upcoming & General (Pending)"
-                  : "Upcoming & General"
-              }
-              icon={<CalendarIcon size={16} className="text-zinc-400" />}
-              items={upcomingItems}
-              selectedIds={selectedIds}
-              onToggleSelect={handleToggleSelect}
-              onToggleStatus={handleToggleStatus}
-            />
-          )}
+                <span className="text-xs text-zinc-500 hidden sm:inline">
+                  Click checkbox to uncheck / reopen
+                </span>
+              </div>
 
-          {/* Completed */}
-          {completedItems.length > 0 && (
-            <ActionSection
-              title="Completed"
-              icon={<CheckCircleIcon size={16} className="text-emerald-400" />}
-              badgeVariant="success"
-              items={completedItems}
-              selectedIds={selectedIds}
-              onToggleSelect={handleToggleSelect}
-              onToggleStatus={handleToggleStatus}
-              isCompletedSection
-            />
+              <ActionSectionGroup
+                title=""
+                icon={null}
+                items={visibleCompleted}
+                isSelectMode={isSelectMode}
+                selectedIds={selectedIds}
+                onToggleSelect={handleToggleSelect}
+                onToggleStatus={handleToggleStatus}
+                isCompletedSection
+              />
+            </div>
           )}
         </div>
       )}
 
-      {/* Confirmation Dialog for Destructive Delete Operations */}
+      {/* Confirmation Dialog for Destructive Operations */}
       {confirmModal.isOpen && (
         <div
           role="dialog"
@@ -764,35 +986,57 @@ export function MyActionsView({
   );
 }
 
-function ActionSection({
+/**
+ * Renders an organized group of action cards with direct completion checkboxes & multi-select integration.
+ */
+function ActionSectionGroup({
   title,
   icon,
+  badgeVariant,
+  badgeCount,
   items,
+  isSelectMode,
   selectedIds,
   onToggleSelect,
   onToggleStatus,
   isCompletedSection = false,
 }: {
-  title: string;
-  icon: React.ReactNode;
-  badgeVariant?: string;
+  title?: string;
+  icon?: React.ReactNode;
+  badgeVariant?: "danger" | "warning" | "default";
+  badgeCount?: number;
   items: ActionItem[];
+  isSelectMode: boolean;
   selectedIds: Set<string>;
   onToggleSelect: (id: string) => void;
   onToggleStatus: (item: ActionItem) => void;
   isCompletedSection?: boolean;
 }) {
+  if (items.length === 0) return null;
+
   return (
     <section className="space-y-3">
-      <div className="flex items-center gap-2">
-        {icon}
-        <h2 className="text-base font-serif font-normal text-zinc-100 tracking-tight">
-          {title}
-        </h2>
-        <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-[#0e1911] text-zinc-300 border border-[rgba(140,170,120,0.15)]">
-          {items.length}
-        </span>
-      </div>
+      {title && (
+        <div className="flex items-center gap-2">
+          {icon}
+          <h3 className="text-sm font-serif font-normal text-zinc-200 tracking-tight">
+            {title}
+          </h3>
+          {badgeCount !== undefined && (
+            <span
+              className={`text-[11px] font-mono px-2 py-0.5 rounded-full border ${
+                badgeVariant === "danger"
+                  ? "bg-rose-950/40 text-rose-300 border-rose-800/40"
+                  : badgeVariant === "warning"
+                  ? "bg-amber-950/40 text-amber-300 border-amber-800/40"
+                  : "bg-[#0e1911] text-zinc-300 border-[rgba(140,170,120,0.15)]"
+              }`}
+            >
+              {badgeCount}
+            </span>
+          )}
+        </div>
+      )}
 
       <div className="space-y-3">
         {items.map((item) => {
@@ -802,50 +1046,105 @@ function ActionSection({
           return (
             <article
               key={item.id}
-              className={`p-4 sm:p-5 rounded-xl border transition-all duration-150 flex items-start gap-3.5 ${
+              onClick={() => {
+                if (isSelectMode) {
+                  onToggleSelect(item.id);
+                }
+              }}
+              className={`p-4 sm:p-5 rounded-2xl border transition-all duration-200 flex items-start gap-3 sm:gap-3.5 group ${
+                isSelectMode ? "cursor-pointer" : ""
+              } ${
                 isSelected
-                  ? "border-[#e8ff47]/40 bg-[#0e1c12] shadow-[0_0_15px_rgba(232,255,71,0.06)]"
-                  : "border-[rgba(140,170,120,0.14)] bg-[#0e1911] hover:bg-[#111d14] hover:border-[rgba(140,170,120,0.28)] shadow-xs"
-              } ${isCompletedSection ? "opacity-60 bg-[#0c150e]/60 border-[rgba(140,170,120,0.1)]" : ""}`}
+                  ? "border-[#e8ff47]/60 bg-[#102215] shadow-[0_0_18px_rgba(232,255,71,0.12)]"
+                  : isCompleted
+                  ? "border-[rgba(140,170,120,0.1)] bg-[#08120c]/60 opacity-70 hover:opacity-90 hover:bg-[#0c160f]"
+                  : "border-[rgba(140,170,120,0.16)] bg-[#0c150e] hover:bg-[#0f1b12] hover:border-[rgba(140,170,120,0.3)] shadow-xs"
+              }`}
             >
-              {/* Selection Checkbox */}
-              <input
-                type="checkbox"
-                checked={isSelected}
-                onChange={() => onToggleSelect(item.id)}
-                aria-label={`Select task: ${item.title}`}
-                className="mt-1 h-4 w-4 rounded border-[rgba(140,170,120,0.35)] bg-[#0c150e] text-[#e8ff47] accent-[#e8ff47] focus:ring-[#e8ff47] cursor-pointer shrink-0"
-              />
+              {/* Checkbox 1: Multi-Select Mode Checkbox (Square checkbox) */}
+              {isSelectMode && (
+                <button
+                  type="button"
+                  role="checkbox"
+                  aria-checked={isSelected}
+                  aria-label={`Select task: ${item.title}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleSelect(item.id);
+                  }}
+                  className={`flex h-5 w-5 sm:h-5.5 sm:w-5.5 items-center justify-center rounded-md transition-all duration-150 cursor-pointer shrink-0 mt-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e8ff47] ${
+                    isSelected
+                      ? "bg-[#e8ff47] text-black border border-[#e8ff47] shadow-[0_0_10px_rgba(232,255,71,0.5)] font-bold"
+                      : "border-2 border-[rgba(140,170,120,0.45)] bg-[#08120c] hover:border-[#e8ff47] hover:bg-[#132418] text-transparent"
+                  }`}
+                >
+                  <CheckIcon
+                    size={13}
+                    className={
+                      isSelected
+                        ? "text-black stroke-[3.5]"
+                        : "opacity-0"
+                    }
+                  />
+                </button>
+              )}
 
+              {/* Checkbox 2: Direct Task Status Checkbox (Circular toggle: Completed <-> Not Completed) */}
+              <button
+                type="button"
+                role="checkbox"
+                aria-checked={isCompleted}
+                aria-label={`Mark "${item.title}" as ${
+                  isCompleted ? "not completed" : "completed"
+                }`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleStatus(item);
+                }}
+                className={`group/cb flex h-5 w-5 sm:h-5.5 sm:w-5.5 items-center justify-center rounded-full transition-all duration-200 cursor-pointer shrink-0 mt-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e8ff47] ${
+                  isCompleted
+                    ? "bg-[#e8ff47] text-black border border-[#e8ff47] shadow-[0_0_10px_rgba(232,255,71,0.5)]"
+                    : "border-2 border-[rgba(140,170,120,0.35)] bg-[#0c150e] hover:border-[#e8ff47]/80 hover:bg-[#132418] text-transparent hover:text-[#e8ff47]/60"
+                }`}
+              >
+                <CheckIcon
+                  size={12}
+                  className={
+                    isCompleted
+                      ? "text-black stroke-[3]"
+                      : "transition-opacity opacity-0 group-hover/cb:opacity-100"
+                  }
+                />
+              </button>
+
+              {/* Task Details Content */}
               <div className="min-w-0 flex-1 space-y-1.5">
                 <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <h3
-                      className={`text-sm sm:text-base font-semibold ${
-                        isCompleted
-                          ? "line-through text-zinc-400"
-                          : "text-zinc-100"
-                      }`}
-                    >
-                      {item.title}
-                    </h3>
-                  </div>
+                  <h4
+                    className={`text-sm sm:text-base font-semibold transition-all duration-150 ${
+                      isCompleted
+                        ? "line-through text-zinc-400 font-normal"
+                        : "text-zinc-100"
+                    }`}
+                  >
+                    {item.title}
+                  </h4>
 
                   <div className="flex items-center gap-1.5 shrink-0">
                     <PriorityBadge priority={item.priority} />
                     <CategoryBadge category={item.category} />
 
-                    {/* Quick Single Status Toggle Button */}
+                    {/* Quick status pill button */}
                     <button
                       type="button"
-                      onClick={() => onToggleStatus(item)}
-                      aria-label={`Mark "${item.title}" as ${
-                        isCompleted ? "pending" : "completed"
-                      }`}
-                      className={`px-2 py-0.5 rounded text-[11px] font-mono transition-colors cursor-pointer border ${
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggleStatus(item);
+                      }}
+                      className={`px-2 py-0.5 rounded-lg text-[10px] font-mono transition-all cursor-pointer border ${
                         isCompleted
                           ? "bg-emerald-950/40 text-emerald-300 border-emerald-800/40 hover:bg-emerald-950/60"
-                          : "bg-[#0c150e] text-zinc-400 border-[rgba(140,170,120,0.15)] hover:text-emerald-300 hover:border-emerald-800/40"
+                          : "bg-[#08120c] text-zinc-400 border-[rgba(140,170,120,0.16)] hover:text-emerald-300 hover:border-emerald-800/40"
                       }`}
                     >
                       {isCompleted ? "✓ Completed" : "Mark Done"}
@@ -854,7 +1153,11 @@ function ActionSection({
                 </div>
 
                 {item.description && (
-                  <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed">
+                  <p
+                    className={`text-xs sm:text-sm leading-relaxed ${
+                      isCompleted ? "text-zinc-400/80" : "text-zinc-400"
+                    }`}
+                  >
                     {item.description}
                   </p>
                 )}
@@ -866,7 +1169,7 @@ function ActionSection({
                     </span>
                   )}
                   {item.sourceDocument && (
-                    <span className="inline-flex items-center gap-1 font-mono text-[11px] bg-[#0c150e] text-zinc-300 border border-[rgba(140,170,120,0.14)] px-2 py-0.5 rounded">
+                    <span className="inline-flex items-center gap-1 font-mono text-[11px] bg-[#08120c] text-zinc-300 border border-[rgba(140,170,120,0.14)] px-2 py-0.5 rounded-md">
                       <DocumentIcon size={12} className="text-zinc-400" /> {item.sourceDocument}
                     </span>
                   )}
