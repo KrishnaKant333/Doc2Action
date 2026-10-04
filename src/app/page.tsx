@@ -10,12 +10,12 @@ type WorkflowStage = "upload" | "processing" | "results";
 
 export default function Home() {
   const [stage, setStage] = React.useState<WorkflowStage>("upload");
-  const [activeFile, setActiveFile] = React.useState<File | null>(null);
+  const [activeFiles, setActiveFiles] = React.useState<File[]>([]);
   const [analysisResult, setAnalysisResult] = React.useState<AnalysisResult | null>(null);
 
   // Triggered from UploadWorkflow
-  const handleStartAnalysis = (file: File) => {
-    setActiveFile(file);
+  const handleStartAnalysis = (files: File[]) => {
+    setActiveFiles(files);
     setAnalysisResult(null);
     setStage("processing");
   };
@@ -26,9 +26,9 @@ export default function Home() {
     setStage("results");
   }, []);
 
-  // Reset workflow back to Upload
+  // Reset workflow back to empty Upload state
   const handleReset = () => {
-    setActiveFile(null);
+    setActiveFiles([]);
     setAnalysisResult(null);
     setStage("upload");
   };
@@ -41,9 +41,9 @@ export default function Home() {
       )}
 
       {/* 2. Processing Screen Stage */}
-      {stage === "processing" && activeFile && (
+      {stage === "processing" && activeFiles.length > 0 && (
         <ProcessingScreen
-          file={activeFile}
+          files={activeFiles}
           onComplete={handleProcessingComplete}
           onCancel={handleReset}
         />

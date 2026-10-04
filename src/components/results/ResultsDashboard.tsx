@@ -28,12 +28,14 @@ export function ResultsDashboard({
   onReset,
   className = "",
 }: ResultsDashboardProps) {
-  const { document, metrics, actions, deadlines, events, importantNotes } = result;
+  const { document, metrics, actions, deadlines, events, importantNotes, documents } = result;
+  const isBatch = Boolean(documents && documents.length > 1);
+  const docCount = documents?.length || 1;
   const fileSizeFormatted = formatFileSize(document.sizeBytes);
   const typeLabel = getFileTypeLabel({
     name: document.name,
     type: document.mimeType,
-  } as File);
+  });
 
   const hasActions = actions && actions.length > 0;
   const hasDeadlines = deadlines && deadlines.length > 0;
@@ -52,12 +54,12 @@ export function ResultsDashboard({
             <div className="flex items-center gap-2 flex-wrap">
               <h1
                 className="text-base sm:text-lg font-bold text-zinc-900 dark:text-zinc-100 truncate max-w-full sm:max-w-md"
-                title={document.name}
+                title={isBatch ? `${docCount} Documents analyzed` : document.name}
               >
-                {document.name}
+                {isBatch ? `${docCount} Documents analyzed` : document.name}
               </h1>
               <span className="text-[11px] font-medium font-mono px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700 shrink-0">
-                {typeLabel}
+                {isBatch ? "Batch" : typeLabel}
               </span>
             </div>
             <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400 mt-1 flex-wrap">
@@ -67,6 +69,20 @@ export function ResultsDashboard({
                 <CheckCircleIcon size={13} /> Analysis Complete
               </span>
             </div>
+            {isBatch && documents && (
+              <div className="flex items-center gap-1.5 flex-wrap pt-2 mt-2 border-t border-zinc-100 dark:border-zinc-800/80">
+                <span className="text-[11px] text-zinc-400">Sources:</span>
+                {documents.map((d) => (
+                  <span
+                    key={d.id}
+                    className="text-[11px] font-mono px-2 py-0.5 rounded bg-zinc-50 dark:bg-zinc-800/60 text-zinc-700 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700/60 truncate max-w-[200px]"
+                    title={d.name}
+                  >
+                    {d.name}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -301,7 +317,9 @@ export function ResultsDashboard({
       {/* 7. Bottom Action Reset Bar */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-zinc-200 dark:border-zinc-800">
         <p className="text-xs text-zinc-500 dark:text-zinc-400 text-center sm:text-left">
-          Extracted {metrics.totalActions} actions and {metrics.totalDeadlines} deadlines from {document.name}.
+          {isBatch
+            ? `Extracted ${metrics.totalActions} actions and ${metrics.totalDeadlines} deadlines across ${docCount} documents.`
+            : `Extracted ${metrics.totalActions} actions and ${metrics.totalDeadlines} deadlines from ${document.name}.`}
         </p>
         <Button
           type="button"

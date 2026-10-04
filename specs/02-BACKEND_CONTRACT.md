@@ -46,9 +46,9 @@ A structured document analysis object matching the domain models in [specs/04-DA
 | Specification Item | Current Repo Status | Technical Recommendation / Notes |
 |---|---|---|
 | **API Endpoint URL** | **TBD (Not implemented)** | Recommended: `POST /api/analyze` (Next.js Route Handler or external service) |
-| **Upload Mechanism** | **TBD (Not implemented)** | Recommended: `multipart/form-data` with field name `file` |
+| **Upload Mechanism** | **TBD (Not implemented)** | Recommended: `multipart/form-data` with field name `file` or `files` (supporting batches up to 5 documents) |
 | **Authentication** | **TBD (Not implemented)** | None required for hackathon MVP |
-| **Max File Size** | **Enforced on Client** | 10 MB client-side limit enforced in `src/components/upload/fileValidation.ts` |
+| **Max File Size** | **Enforced on Client** | 10 MB per file (batch max: 5 documents) enforced in `src/components/upload/fileValidation.ts` |
 | **Supported MIME Types** | **Enforced on Client** | PDF, DOCX, TXT enforced in `fileValidation.ts` |
 | **Asynchronous vs Synchronous** | **TBD (Not implemented)** | Direct synchronous request-response recommended for MVP velocity |
 | **JSON Response Schema** | **TBD (Not implemented)** | Must map to `AnalysisResult` in `src/lib/types/action.ts` |

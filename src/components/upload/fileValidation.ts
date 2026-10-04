@@ -5,6 +5,8 @@
 
 export const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
 
+export const MAX_BATCH_FILES = 5; // Maximum documents per batch
+
 export const SUPPORTED_EXTENSIONS = [".pdf", ".docx", ".doc", ".txt"];
 
 export const SUPPORTED_MIME_TYPES = [
@@ -33,7 +35,7 @@ export function formatFileSize(bytes: number): string {
 /**
  * Returns a clean readable format label based on file name or MIME type
  */
-export function getFileTypeLabel(file: File): string {
+export function getFileTypeLabel(file: { name: string; type?: string }): string {
   const name = file.name.toLowerCase();
   if (name.endsWith(".pdf") || file.type === "application/pdf") return "PDF";
   if (name.endsWith(".docx") || name.endsWith(".doc")) return "DOCX";

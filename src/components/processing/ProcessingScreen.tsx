@@ -9,21 +9,25 @@ import { Button } from "../ui/button";
 import { formatFileSize, getFileTypeLabel } from "../upload/fileValidation";
 
 export interface ProcessingScreenProps {
-  file: File;
+  files: File[];
   onComplete: (result: AnalysisResult) => void;
   onCancel: () => void;
   className?: string;
 }
 
 export function ProcessingScreen({
-  file,
+  files,
   onComplete,
   onCancel,
   className = "",
 }: ProcessingScreenProps) {
   const [currentStatus, setCurrentStatus] = React.useState<ProcessingStatus>("uploading");
   const [progressPercent, setProgressPercent] = React.useState<number>(10);
-  const [statusMessage, setStatusMessage] = React.useState<string>("Preparing document for analysis...");
+  const [statusMessage, setStatusMessage] = React.useState<string>(
+    files.length > 1
+      ? `Preparing ${files.length} documents for analysis...`
+      : "Preparing document for analysis..."
+  );
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
   const [isCompleted, setIsCompleted] = React.useState<boolean>(false);
 
@@ -37,12 +41,14 @@ export function ProcessingScreen({
 
     async function runAnalysis() {
       try {
+        const filePayloads = files.map((file) => ({
+          name: file.name,
+          sizeBytes: file.size,
+          mimeType: file.type,
+        }));
+
         const result = await simulateDocumentAnalysis(
-          {
-            name: file.name,
-            sizeBytes: file.size,
-            mimeType: file.type,
-          },
+          filePayloads,
           (update: ProgressUpdate) => {
             if (!isMounted) return;
             setCurrentStatus(update.status);
@@ -57,7 +63,11 @@ export function ProcessingScreen({
         setIsCompleted(true);
         setCurrentStatus("complete");
         setProgressPercent(100);
-        setStatusMessage("Analysis complete!");
+        setStatusMessage(
+          files.length > 1
+            ? `Analysis of ${files.length} documents complete!`
+            : "Analysis complete!"
+        );
 
         // Brief delay before triggering onComplete to allow user to register completion
         setTimeout(() => {
@@ -75,7 +85,7 @@ export function ProcessingScreen({
         const msg =
           err instanceof Error
             ? err.message
-            : "We couldn't analyze this document. Please try again with another file.";
+            : "We couldn't analyze the documents. Please try again with different files.";
         setErrorMessage(msg);
       }
     }
@@ -86,7 +96,7 @@ export function ProcessingScreen({
       isMounted = false;
       controller.abort();
     };
-  }, [file, onComplete]);
+  }, [files, onComplete]);
 
   const handleCancelClick = () => {
     if (abortControllerRef.current) {
@@ -95,43 +105,73 @@ export function ProcessingScreen({
     onCancel();
   };
 
-  const formattedSize = formatFileSize(file.size);
-  const typeLabel = getFileTypeLabel(file);
+  const totalSize = files.reduce((acc, f) => acc + f.size, 0);
+  const formattedTotalSize = formatFileSize(totalSize);
 
   return (
     <div className={`w-full max-w-xl mx-auto space-y-8 ${className}`}>
-      {/* Active Document Header */}
-      <div className="flex items-center justify-between p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700/60">
-            <DocumentIcon size={20} />
+      {/* Active Document Header / Batch Summary Card */}
+      <div className="p-4 sm:p-5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs space-y-3">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700/60">
+              <DocumentIcon size={20} />
+            </div>
+            <div className="min-w-0 flex-1">
+              {files.length === 1 ? (
+                <>
+                  <p
+                    className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate"
+                    title={files[0].name}
+                  >
+                    {files[0].name}
+                  </p>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                    {getFileTypeLabel(files[0])} • {formatFileSize(files[0].size)}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                    Processing batch ({files.length} documents)
+                  </p>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                    {files.length} files • {formattedTotalSize} total
+                  </p>
+                </>
+              )}
+            </div>
           </div>
-          <div className="min-w-0 flex-1">
-            <p
-              className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate"
-              title={file.name}
+
+          {/* Cancel button if still processing */}
+          {!isCompleted && !errorMessage && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={handleCancelClick}
+              className="text-xs text-zinc-500 hover:text-red-600 dark:text-zinc-400 dark:hover:text-red-400 shrink-0"
+              aria-label="Cancel analysis"
             >
-              {file.name}
-            </p>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              {typeLabel} • {formattedSize}
-            </p>
-          </div>
+              <XIcon size={14} className="mr-1" />
+              Cancel
+            </Button>
+          )}
         </div>
 
-        {/* Cancel button if still processing */}
-        {!isCompleted && !errorMessage && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={handleCancelClick}
-            className="text-xs text-zinc-500 hover:text-red-600 dark:text-zinc-400 dark:hover:text-red-400 shrink-0"
-            aria-label="Cancel analysis"
-          >
-            <XIcon size={14} className="mr-1" />
-            Cancel
-          </Button>
+        {/* Multi-document badges list if more than 1 file */}
+        {files.length > 1 && (
+          <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 flex flex-wrap gap-1.5">
+            {files.map((file, idx) => (
+              <span
+                key={`${file.name}-${idx}`}
+                className="inline-flex items-center text-[11px] font-mono px-2 py-0.5 rounded bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 max-w-[200px] truncate"
+                title={file.name}
+              >
+                {file.name}
+              </span>
+            ))}
+          </div>
         )}
       </div>
 
@@ -166,7 +206,13 @@ export function ProcessingScreen({
           {/* Status Title & Accessible Aria Live Region */}
           <div className="space-y-1 text-center">
             <h2 className="text-lg sm:text-xl font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">
-              {isCompleted ? "Analysis Complete" : "Analyzing Document"}
+              {isCompleted
+                ? files.length > 1
+                  ? "Batch Analysis Complete"
+                  : "Analysis Complete"
+                : files.length > 1
+                ? `Analyzing ${files.length} Documents`
+                : "Analyzing Document"}
             </h2>
             <div
               role="status"
@@ -188,7 +234,11 @@ export function ProcessingScreen({
           {isCompleted && (
             <div className="flex items-center justify-center gap-2 text-xs font-medium text-emerald-600 dark:text-emerald-400 pt-2 animate-fade-in">
               <CheckCircleIcon size={16} />
-              <span>Actions and deadlines identified successfully!</span>
+              <span>
+                {files.length > 1
+                  ? `Actions and deadlines extracted across ${files.length} documents!`
+                  : "Actions and deadlines identified successfully!"}
+              </span>
             </div>
           )}
         </div>

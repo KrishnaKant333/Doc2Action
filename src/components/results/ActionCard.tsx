@@ -3,7 +3,7 @@
 import * as React from "react";
 import { ActionItem } from "../../lib/types/action";
 import { PriorityBadge, CategoryBadge, ActionStatusBadge } from "../ui/badge";
-import { CalendarIcon } from "../ui/icons";
+import { CalendarIcon, DocumentIcon } from "../ui/icons";
 
 export interface ActionCardProps {
   action: ActionItem;
@@ -34,6 +34,17 @@ export function ActionCard({ action, className = "" }: ActionCardProps) {
       {action.sourceSnippet && (
         <div className="text-xs text-zinc-500 dark:text-zinc-400/90 italic border-l-2 border-zinc-200 dark:border-zinc-700 pl-2.5 py-0.5">
           &ldquo;{action.sourceSnippet}&rdquo;
+        </div>
+      )}
+
+      {/* Source Document Tag if available */}
+      {action.sourceDocument && (
+        <div className="flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400 font-medium">
+          <DocumentIcon size={13} className="text-zinc-400 dark:text-zinc-500 shrink-0" />
+          <span>
+            <span className="text-zinc-400 dark:text-zinc-500">Source:</span>{" "}
+            <span className="text-zinc-700 dark:text-zinc-300 font-mono text-[11px]">{action.sourceDocument}</span>
+          </span>
         </div>
       )}
 

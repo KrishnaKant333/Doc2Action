@@ -3,82 +3,82 @@
 import * as React from "react";
 import { UploadIcon, DocumentIcon } from "../ui/icons";
 import {
-  validateFile,
   SUPPORTED_EXTENSIONS,
   SUPPORTED_MIME_TYPES,
 } from "./fileValidation";
 
 export interface UploadDropzoneProps {
-  onFileSelect: (file: File) => void;
-  onError: (errorMessage: string) => void;
+  onFilesSelect: (files: File[]) => void;
   className?: string;
+  disabled?: boolean;
 }
 
 export function UploadDropzone({
-  onFileSelect,
-  onError,
+  onFilesSelect,
   className = "",
+  disabled = false,
 }: UploadDropzoneProps) {
   const [isDragOver, setIsDragOver] = React.useState(false);
   const [isDragInvalid, setIsDragInvalid] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    if (disabled) return;
     e.preventDefault();
     e.stopPropagation();
     setIsDragOver(true);
 
     // Inspect drag items if available in the event
     if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
-      const item = e.dataTransfer.items[0];
-      if (item.kind === "file" && item.type) {
-        const isSupported = SUPPORTED_MIME_TYPES.includes(
-          item.type.toLowerCase()
-        );
-        setIsDragInvalid(!isSupported);
+      let hasInvalid = false;
+      for (let i = 0; i < e.dataTransfer.items.length; i++) {
+        const item = e.dataTransfer.items[i];
+        if (item.kind === "file" && item.type) {
+          const isSupported = SUPPORTED_MIME_TYPES.includes(
+            item.type.toLowerCase()
+          );
+          if (!isSupported) {
+            hasInvalid = true;
+            break;
+          }
+        }
       }
+      setIsDragInvalid(hasInvalid);
     }
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    if (disabled) return;
     e.preventDefault();
     e.stopPropagation();
   };
 
   const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    if (disabled) return;
     e.preventDefault();
     e.stopPropagation();
-    // Only reset if dragging out of the container completely
     if (e.currentTarget.contains(e.relatedTarget as Node)) return;
     setIsDragOver(false);
     setIsDragInvalid(false);
   };
 
-  const processFile = (file: File) => {
-    const validation = validateFile(file);
-    if (!validation.isValid && validation.error) {
-      onError(validation.error);
-    } else {
-      onFileSelect(file);
-    }
-  };
-
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    if (disabled) return;
     e.preventDefault();
     e.stopPropagation();
     setIsDragOver(false);
     setIsDragInvalid(false);
 
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      const droppedFile = e.dataTransfer.files[0];
-      processFile(droppedFile);
+      const files = Array.from(e.dataTransfer.files);
+      onFilesSelect(files);
     }
   };
 
   const handleNativeInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      const selectedFile = e.target.files[0];
-      processFile(selectedFile);
+      const files = Array.from(e.target.files);
+      onFilesSelect(files);
     }
     // Reset native input value so selecting the same file again triggers change event
     if (fileInputRef.current) {
@@ -87,10 +87,12 @@ export function UploadDropzone({
   };
 
   const triggerBrowse = () => {
+    if (disabled) return;
     fileInputRef.current?.click();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (disabled) return;
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
       triggerBrowse();
@@ -104,8 +106,9 @@ export function UploadDropzone({
   return (
     <div
       role="button"
-      tabIndex={0}
-      aria-label="Upload document dropzone. Press Enter or Space to browse files, or drag and drop a document here."
+      tabIndex={disabled ? -1 : 0}
+      aria-disabled={disabled}
+      aria-label="Upload documents dropzone. Press Enter or Space to browse files, or drag and drop documents here."
       aria-describedby="dropzone-instructions dropzone-constraints"
       onClick={triggerBrowse}
       onKeyDown={handleKeyDown}
@@ -113,22 +116,26 @@ export function UploadDropzone({
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className={`relative group cursor-pointer rounded-xl border-2 border-dashed transition-all duration-200 p-6 sm:p-12 text-center select-none outline-none focus-visible:ring-2 focus-visible:ring-zinc-900 dark:focus-visible:ring-zinc-100 focus-visible:ring-offset-2 ${
-        isDragInvalid
-          ? "border-amber-400 bg-amber-50/40 dark:border-amber-700 dark:bg-amber-950/20"
+      className={`relative group rounded-xl border-2 border-dashed transition-all duration-200 p-6 sm:p-10 text-center select-none outline-none ${
+        disabled
+          ? "opacity-50 cursor-not-allowed border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50"
+          : isDragInvalid
+          ? "cursor-pointer border-amber-400 bg-amber-50/40 dark:border-amber-700 dark:bg-amber-950/20"
           : isDragOver
-          ? "border-zinc-900 bg-zinc-100/60 dark:border-zinc-100 dark:bg-zinc-800/40 scale-[1.005]"
-          : "border-zinc-300 hover:border-zinc-400 dark:border-zinc-700 dark:hover:border-zinc-600 bg-white dark:bg-zinc-900"
-      } ${className}`}
+          ? "cursor-pointer border-zinc-900 bg-zinc-100/60 dark:border-zinc-100 dark:bg-zinc-800/40 scale-[1.005]"
+          : "cursor-pointer border-zinc-300 hover:border-zinc-400 dark:border-zinc-700 dark:hover:border-zinc-600 bg-white dark:bg-zinc-900"
+      } focus-visible:ring-2 focus-visible:ring-zinc-900 dark:focus-visible:ring-zinc-100 focus-visible:ring-offset-2 ${className}`}
     >
       {/* Hidden Native File Input */}
       <input
         ref={fileInputRef}
         type="file"
+        multiple
         tabIndex={-1}
         aria-hidden="true"
         accept={acceptedTypesString}
         onChange={handleNativeInputChange}
+        disabled={disabled}
         className="sr-only"
       />
 
@@ -152,14 +159,14 @@ export function UploadDropzone({
             {isDragInvalid
               ? "Unsupported file type detected"
               : isDragOver
-              ? "Drop your document here"
-              : "Upload a document"}
+              ? "Drop documents here"
+              : "Upload documents"}
           </h3>
           <p
             id="dropzone-instructions"
             className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 leading-normal"
           >
-            Drag and drop your document here, or{" "}
+            Drag and drop multiple documents here, or{" "}
             <span className="font-medium text-zinc-900 dark:text-zinc-100 underline underline-offset-2">
               browse files
             </span>
@@ -172,7 +179,7 @@ export function UploadDropzone({
             id="dropzone-constraints"
             className="inline-flex items-center text-[11px] font-medium px-2.5 py-1 rounded-full bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 border border-zinc-200/80 dark:border-zinc-700/80"
           >
-            PDF • DOCX • TXT &nbsp;|&nbsp; Max 10 MB
+            PDF • DOCX • TXT &nbsp;|&nbsp; Max 10 MB per file &nbsp;|&nbsp; Up to 5 documents
           </span>
         </div>
       </div>

@@ -48,6 +48,7 @@ export interface ActionItem {
   category: Category;
   status: ActionStatus;
   sourceSnippet?: string;
+  sourceDocument?: string;
 }
 
 // Confirmed: Specific deadline entry
@@ -77,6 +78,7 @@ export interface AnalysisMetrics {
 // Confirmed: Complete structured analysis result
 export interface AnalysisResult {
   document: DocumentMetadata;
+  documents?: DocumentMetadata[];
   metrics: AnalysisMetrics;
   actions: ActionItem[];
   deadlines: Deadline[];
