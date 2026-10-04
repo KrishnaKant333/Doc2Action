@@ -8,7 +8,7 @@ import * as React from "react";
  * Recreates the visual atmosphere of Nexus Studio:
  * - Layer 0: Deep dark background (#04040a)
  * - Layer 1: 60px × 60px subtle grid (1px lines with white at 3% opacity)
- * - Layer 2: 800px × 800px electric lime (#e8ff47) soft cursor-following glow (10% opacity, 120px blur, 1000ms ease-out)
+ * - Layer 2: 800px × 800px electric lime (#e8ff47) soft cursor-following glow (10% opacity, 120px blur, 150ms ease-out)
  * 
  * Optimized with direct DOM updates (via useRef + requestAnimationFrame) to prevent React re-renders on pointer movement.
  * Automatically disabled on touch-only devices and when reduced motion is preferred.
@@ -105,7 +105,7 @@ export function InteractiveBackground() {
         ref={blobRef}
         className="absolute top-0 left-0 w-[800px] h-[800px] rounded-full bg-[#e8ff47] pointer-events-none blur-[120px] will-change-transform opacity-0 hidden [@media(hover:hover)_and_(pointer:fine)]:block motion-reduce:!hidden"
         style={{
-          transition: "transform 1000ms ease-out, opacity 500ms ease-out",
+          transition: "transform 150ms ease-out, opacity 500ms ease-out",
         }}
       />
     </div>
