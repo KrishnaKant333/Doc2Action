@@ -5,6 +5,7 @@ import "./globals.css";
 import { Header } from "@/components/ui/header";
 import { InteractiveBackground } from "@/components/ui/InteractiveBackground";
 import { ScrollToTop } from "@/components/ui/ScrollToTop";
+import { Analytics } from "@vercel/analytics/next";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -56,6 +57,7 @@ export default function RootLayout({
           {children}
         </main>
         <ScrollToTop threshold={300} />
+        <Analytics />
       </body>
     </html>
   );
