@@ -47,6 +47,7 @@ export const collegeNoticeResult: AnalysisResult = {
       category: "academic",
       status: "pending",
       sourceSnippet: "Submit the project report by 15 October 2026 on the department portal.",
+      sourceDocument: "college_circular_capstone_2026.pdf",
     },
     {
       id: "act-col-2",
@@ -57,6 +58,7 @@ export const collegeNoticeResult: AnalysisResult = {
       category: "finance",
       status: "pending",
       sourceSnippet: "Examination fee payment must be completed before 18 October 2026, 4:00 PM.",
+      sourceDocument: "college_circular_capstone_2026.pdf",
     },
     {
       id: "act-col-3",
@@ -67,6 +69,7 @@ export const collegeNoticeResult: AnalysisResult = {
       category: "academic",
       status: "pending",
       sourceSnippet: "Oral defense and system demonstration scheduled on 22 October 2026.",
+      sourceDocument: "college_circular_capstone_2026.pdf",
     },
   ],
   deadlines: [
@@ -75,12 +78,14 @@ export const collegeNoticeResult: AnalysisResult = {
       title: "Project Report Submission",
       dueDate: "15 October 2026, 11:59 PM",
       isStrict: true,
+      sourceDocument: "college_circular_capstone_2026.pdf",
     },
     {
       id: "dl-col-2",
       title: "Semester Examination Fee Cutoff",
       dueDate: "18 October 2026, 04:00 PM",
       isStrict: true,
+      sourceDocument: "college_circular_capstone_2026.pdf",
     },
   ],
   events: [
@@ -89,6 +94,7 @@ export const collegeNoticeResult: AnalysisResult = {
       title: "Capstone Oral Defense & System Demo",
       date: "22 October 2026, 10:00 AM - 02:00 PM",
       location: "Seminar Hall B, Block 2",
+      sourceDocument: "college_circular_capstone_2026.pdf",
     },
   ],
   importantNotes: [
@@ -127,6 +133,7 @@ export const symposiumCircularResult: AnalysisResult = {
       category: "academic",
       status: "pending",
       sourceSnippet: "Paper abstracts must be submitted via EasyChair before 20 October 2026.",
+      sourceDocument: "tech_symposium_call_for_papers.pdf",
     },
     {
       id: "act-sym-2",
@@ -137,6 +144,7 @@ export const symposiumCircularResult: AnalysisResult = {
       category: "event",
       status: "pending",
       sourceSnippet: "Early registration discount valid until 25 October 2026.",
+      sourceDocument: "tech_symposium_call_for_papers.pdf",
     },
     {
       id: "act-sym-3",
@@ -147,6 +155,7 @@ export const symposiumCircularResult: AnalysisResult = {
       category: "event",
       status: "pending",
       sourceSnippet: "Poster presentations should be printed and verified by 2 November 2026.",
+      sourceDocument: "tech_symposium_call_for_papers.pdf",
     },
   ],
   deadlines: [
@@ -155,12 +164,14 @@ export const symposiumCircularResult: AnalysisResult = {
       title: "Abstract Submission Deadline",
       dueDate: "20 October 2026, 11:59 PM UTC",
       isStrict: true,
+      sourceDocument: "tech_symposium_call_for_papers.pdf",
     },
     {
       id: "dl-sym-2",
       title: "Early-Bird Registration Cutoff",
       dueDate: "25 October 2026, 05:00 PM",
       isStrict: false,
+      sourceDocument: "tech_symposium_call_for_papers.pdf",
     },
   ],
   events: [
@@ -169,6 +180,7 @@ export const symposiumCircularResult: AnalysisResult = {
       title: "National Tech Symposium & Keynote Sessions",
       date: "05-06 November 2026, 09:00 AM",
       location: "Grand Auditorium & Virtual Stream",
+      sourceDocument: "tech_symposium_call_for_papers.pdf",
     },
   ],
   importantNotes: [
@@ -206,6 +218,7 @@ export const officeNoticeResult: AnalysisResult = {
       category: "finance",
       status: "pending",
       sourceSnippet: "Payment of utilities surcharge is due strictly on or before 10 October 2026.",
+      sourceDocument: "office_lease_and_utilities_notice.pdf",
     },
     {
       id: "act-adm-2",
@@ -216,6 +229,7 @@ export const officeNoticeResult: AnalysisResult = {
       category: "administrative",
       status: "pending",
       sourceSnippet: "Tenants must furnish fire safety compliance certificates by 28 October 2026.",
+      sourceDocument: "office_lease_and_utilities_notice.pdf",
     },
     {
       id: "act-adm-3",
@@ -226,6 +240,7 @@ export const officeNoticeResult: AnalysisResult = {
       category: "administrative",
       status: "pending",
       sourceSnippet: "Renewal notices must be formally submitted 45 days prior to lease expiry.",
+      sourceDocument: "office_lease_and_utilities_notice.pdf",
     },
   ],
   deadlines: [
@@ -234,12 +249,14 @@ export const officeNoticeResult: AnalysisResult = {
       title: "Utility Invoice Payment",
       dueDate: "10 October 2026, 06:00 PM",
       isStrict: true,
+      sourceDocument: "office_lease_and_utilities_notice.pdf",
     },
     {
       id: "dl-adm-2",
       title: "Safety Audit Compliance Document",
       dueDate: "28 October 2026, 05:00 PM",
       isStrict: true,
+      sourceDocument: "office_lease_and_utilities_notice.pdf",
     },
   ],
   events: [
@@ -248,6 +265,7 @@ export const officeNoticeResult: AnalysisResult = {
       title: "Quarterly Building Fire Drill & Evacuation Practice",
       date: "14 October 2026, 02:00 PM",
       location: "Block 4 Exterior Assembly Area",
+      sourceDocument: "office_lease_and_utilities_notice.pdf",
     },
   ],
   importantNotes: [

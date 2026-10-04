@@ -169,27 +169,49 @@ export async function simulateDocumentAnalysis(
       sample = samplePool[idx % samplePool.length];
     }
 
+    // Support test variations based on filename (e.g. document without deadlines, without events, or unassigned source)
+    const isNoDeadlines =
+      lowerName.includes("no-deadline") ||
+      lowerName.includes("no_deadline") ||
+      lowerName.includes("nodeadline");
+    const isNoEvents =
+      lowerName.includes("no-event") ||
+      lowerName.includes("no_event") ||
+      lowerName.includes("noevent");
+    const isUnassignedSource =
+      lowerName.includes("unassigned") ||
+      lowerName.includes("no-source") ||
+      lowerName.includes("missing-source");
+
+    const sourceDoc = isUnassignedSource ? undefined : file.name;
+
     // Attach source document filename and unique IDs to actions
     const fileActions = sample.actions.map((act, actIdx) => ({
       ...act,
       id: `act-${idx + 1}-${actIdx + 1}-${act.id}`,
-      sourceDocument: file.name,
+      sourceDocument: sourceDoc,
     }));
     allActions.push(...fileActions);
 
-    // Attach deadlines
-    const fileDeadlines = sample.deadlines.map((dl, dlIdx) => ({
-      ...dl,
-      id: `dl-${idx + 1}-${dlIdx + 1}-${dl.id}`,
-    }));
-    allDeadlines.push(...fileDeadlines);
+    // Attach deadlines (unless document specifically has no deadlines for testing)
+    if (!isNoDeadlines) {
+      const fileDeadlines = sample.deadlines.map((dl, dlIdx) => ({
+        ...dl,
+        id: `dl-${idx + 1}-${dlIdx + 1}-${dl.id}`,
+        sourceDocument: sourceDoc,
+      }));
+      allDeadlines.push(...fileDeadlines);
+    }
 
-    // Attach events
-    const fileEvents = sample.events.map((ev, evIdx) => ({
-      ...ev,
-      id: `ev-${idx + 1}-${evIdx + 1}-${ev.id}`,
-    }));
-    allEvents.push(...fileEvents);
+    // Attach events (unless document specifically has no events for testing)
+    if (!isNoEvents) {
+      const fileEvents = sample.events.map((ev, evIdx) => ({
+        ...ev,
+        id: `ev-${idx + 1}-${evIdx + 1}-${ev.id}`,
+        sourceDocument: sourceDoc,
+      }));
+      allEvents.push(...fileEvents);
+    }
 
     allNotes.push(...sample.importantNotes);
   });
