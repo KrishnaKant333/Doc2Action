@@ -3,6 +3,12 @@
 :root {
   --background: #04040a;
   --foreground: #ededed;
+  --surface-navbar: rgba(8, 18, 12, 0.85);
+  --surface-primary: #0b120d;
+  --surface-secondary: #0c150e;
+  --surface-card: #0e1911;
+  --surface-card-hover: #111d14;
+  --border-subtle: rgba(140, 170, 120, 0.14);
 }
 
 @theme inline {

@@ -57,9 +57,9 @@ export function ProgressTimeline({
               aria-current={isCurrent ? "step" : undefined}
               className={`flex items-start gap-3 p-3 rounded-lg border transition-colors ${
                 isCurrent
-                  ? "bg-zinc-50 dark:bg-zinc-800/60 border-zinc-300 dark:border-zinc-700"
+                  ? "bg-[#0e1911] border-[rgba(140,170,120,0.28)]"
                   : isCompleted
-                  ? "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400"
+                  ? "bg-[#0c150e] border-[rgba(140,170,120,0.14)] text-zinc-400"
                   : "bg-transparent border-transparent opacity-50"
               }`}
             >
@@ -69,8 +69,8 @@ export function ProgressTimeline({
                   <CheckCircleIcon size={18} className="text-emerald-600 dark:text-emerald-400" />
                 ) : isCurrent ? (
                   <span className="relative flex h-4 w-4 m-0.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-zinc-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-4 w-4 bg-zinc-900 dark:bg-zinc-100"></span>
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#e8ff47]/40 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-4 w-4 bg-[#e8ff47]"></span>
                   </span>
                 ) : (
                   <ClockIcon size={18} className="text-zinc-400 dark:text-zinc-600" />

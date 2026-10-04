@@ -34,17 +34,17 @@ export function SelectedFilesList({
         <h2 className="text-sm font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
           Selected documents
         </h2>
-        <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700">
+        <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-[#0e1911] text-zinc-300 border border-[rgba(140,170,120,0.15)]">
           {items.length} of {MAX_BATCH_FILES}
         </span>
       </div>
 
       {/* Documents Card Container */}
-      <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs overflow-hidden">
+      <div className="rounded-xl border border-[rgba(140,170,120,0.14)] bg-[#0b120d] shadow-xs overflow-hidden">
         <ul
           role="list"
           aria-label="Selected documents list"
-          className="divide-y divide-zinc-100 dark:divide-zinc-800/80"
+          className="divide-y divide-[rgba(140,170,120,0.1)]"
         >
           {items.map((item) => {
             const sizeString = formatFileSize(item.file.size);
@@ -56,7 +56,7 @@ export function SelectedFilesList({
                 className={`p-3.5 sm:p-4 flex items-center justify-between gap-3 transition-colors ${
                   !item.isValid
                     ? "bg-red-50/50 dark:bg-red-950/20"
-                    : "hover:bg-zinc-50/60 dark:hover:bg-zinc-800/30"
+                    : "hover:bg-[#0e1911]/60"
                 }`}
               >
                 {/* File Details */}
@@ -66,7 +66,7 @@ export function SelectedFilesList({
                     className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${
                       !item.isValid
                         ? "bg-red-100 text-red-600 dark:bg-red-900/50 dark:text-red-300 border-red-200 dark:border-red-900/60"
-                        : "bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200 border-zinc-200/60 dark:border-zinc-700/60"
+                        : "bg-[#0e1911] text-zinc-200 border border-[rgba(140,170,120,0.15)]"
                     }`}
                   >
                     {!item.isValid ? <AlertCircleIcon size={20} /> : <DocumentIcon size={20} />}
@@ -81,7 +81,7 @@ export function SelectedFilesList({
                       >
                         {item.file.name}
                       </p>
-                      <span className="text-[10px] font-medium font-mono px-1.5 py-0.2 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700 shrink-0">
+                      <span className="text-[10px] font-medium font-mono px-1.5 py-0.2 rounded bg-[#0e1911] text-zinc-400 border border-[rgba(140,170,120,0.15)] shrink-0">
                         {typeLabel}
                       </span>
                     </div>
@@ -130,7 +130,7 @@ export function SelectedFilesList({
             variant="outline"
             size="sm"
             onClick={onAddMore}
-            className="text-xs"
+            className="text-xs border-[rgba(140,170,120,0.2)] hover:border-[rgba(140,170,120,0.35)] hover:bg-[#0e1911] text-zinc-200"
             aria-label="Add more documents"
           >
             <PlusIcon size={14} className="mr-1" />

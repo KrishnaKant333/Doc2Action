@@ -54,7 +54,7 @@ export function ScrollToTop({
       type="button"
       onClick={handleScrollToTop}
       aria-label="Go to top"
-      className={`fixed bottom-6 right-6 z-50 flex flex-col items-center justify-center gap-0.5 w-12 h-12 rounded-2xl bg-[#0c0d16]/85 backdrop-blur-md border border-[#e8ff47]/20 shadow-[0_8px_32px_rgba(0,0,0,0.5),0_0_12px_rgba(232,255,71,0.15)] text-[#e8ff47] hover:border-[#e8ff47]/50 hover:bg-[#121422]/95 hover:shadow-[0_8px_32px_rgba(0,0,0,0.6),0_0_20px_rgba(232,255,71,0.3)] hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#e8ff47] focus-visible:ring-offset-2 focus-visible:ring-offset-[#04040a] group ${className}`}
+      className={`fixed bottom-6 right-6 z-50 flex flex-col items-center justify-center gap-0.5 w-12 h-12 rounded-2xl bg-[#08120c]/85 backdrop-blur-md border border-[#e8ff47]/20 shadow-[0_8px_32px_rgba(0,0,0,0.5),0_0_12px_rgba(232,255,71,0.15)] text-[#e8ff47] hover:border-[#e8ff47]/50 hover:bg-[#0e1911]/95 hover:shadow-[0_8px_32px_rgba(0,0,0,0.6),0_0_20px_rgba(232,255,71,0.3)] hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#e8ff47] focus-visible:ring-offset-2 focus-visible:ring-offset-[#04040a] group ${className}`}
     >
       {/* Upward Arrow Icon */}
       <svg

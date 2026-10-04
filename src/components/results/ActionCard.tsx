@@ -18,7 +18,7 @@ export function ActionCard({
 }: ActionCardProps) {
   return (
     <article
-      className={`rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 sm:p-5 space-y-3 shadow-xs transition-colors hover:border-zinc-300 dark:hover:border-zinc-700 ${className}`}
+      className={`rounded-xl border border-[rgba(140,170,120,0.14)] bg-[#0e1911] p-4 sm:p-5 space-y-3 shadow-xs transition-colors hover:border-[rgba(140,170,120,0.28)] hover:bg-[#111d14] ${className}`}
     >
       {/* Header: Title and Priority Badge */}
       <div className="flex items-start justify-between gap-3">
@@ -37,7 +37,7 @@ export function ActionCard({
 
       {/* Optional Source Snippet from Document */}
       {action.sourceSnippet && (
-        <div className="text-xs text-zinc-500 dark:text-zinc-400/90 italic border-l-2 border-zinc-200 dark:border-zinc-700 pl-2.5 py-0.5">
+        <div className="text-xs text-zinc-500 dark:text-zinc-400/90 italic border-l-2 border-[rgba(140,170,120,0.3)] pl-2.5 py-0.5">
           &ldquo;{action.sourceSnippet}&rdquo;
         </div>
       )}
@@ -54,7 +54,7 @@ export function ActionCard({
       )}
 
       {/* Footer: Deadline & Classification Badges */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-3 border-t border-zinc-100 dark:border-zinc-800/80 text-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-3 border-t border-[rgba(140,170,120,0.12)] text-xs">
         {/* Deadline */}
         <div className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400 font-medium">
           <CalendarIcon size={14} className="text-zinc-400 dark:text-zinc-500 shrink-0" />

@@ -118,13 +118,13 @@ export function UploadDropzone({
       onDrop={handleDrop}
       className={`relative group rounded-xl border-2 border-dashed transition-all duration-200 p-6 sm:p-10 text-center select-none outline-none ${
         disabled
-          ? "opacity-50 cursor-not-allowed border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50"
+          ? "opacity-50 cursor-not-allowed border-[rgba(140,170,120,0.12)] bg-[#0b120d]/50"
           : isDragInvalid
           ? "cursor-pointer border-amber-400 bg-amber-50/40 dark:border-amber-700 dark:bg-amber-950/20"
           : isDragOver
-          ? "cursor-pointer border-zinc-900 bg-zinc-100/60 dark:border-zinc-100 dark:bg-zinc-800/40 scale-[1.005]"
-          : "cursor-pointer border-zinc-300 hover:border-zinc-400 dark:border-zinc-700 dark:hover:border-zinc-600 bg-white dark:bg-zinc-900"
-      } focus-visible:ring-2 focus-visible:ring-zinc-900 dark:focus-visible:ring-zinc-100 focus-visible:ring-offset-2 ${className}`}
+          ? "cursor-pointer border-[#e8ff47]/50 bg-[#0e1911] scale-[1.005]"
+          : "cursor-pointer border-[rgba(140,170,120,0.22)] hover:border-[rgba(140,170,120,0.38)] bg-[#0b120d] hover:bg-[#0d160f]"
+      } focus-visible:ring-2 focus-visible:ring-[#e8ff47] focus-visible:ring-offset-2 focus-visible:ring-offset-[#04040a] ${className}`}
     >
       {/* Hidden Native File Input */}
       <input
@@ -146,8 +146,8 @@ export function UploadDropzone({
             isDragInvalid
               ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
               : isDragOver
-              ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-              : "bg-zinc-100 text-zinc-600 group-hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:group-hover:bg-zinc-700"
+              ? "bg-[#e8ff47]/20 text-[#e8ff47]"
+              : "bg-[#0e1911] text-zinc-400 group-hover:bg-[#111d14] group-hover:text-zinc-200 border border-[rgba(140,170,120,0.14)]"
           }`}
         >
           {isDragInvalid ? <DocumentIcon size={24} /> : <UploadIcon size={24} />}
@@ -177,7 +177,7 @@ export function UploadDropzone({
         <div className="pt-2">
           <span
             id="dropzone-constraints"
-            className="inline-flex items-center text-[11px] font-medium px-2.5 py-1 rounded-full bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 border border-zinc-200/80 dark:border-zinc-700/80"
+            className="inline-flex items-center text-[11px] font-medium px-2.5 py-1 rounded-full bg-[#0e1911] text-zinc-400 border border-[rgba(140,170,120,0.14)]"
           >
             PDF • DOCX • TXT &nbsp;|&nbsp; Max 10 MB per file &nbsp;|&nbsp; Up to 5 documents
           </span>

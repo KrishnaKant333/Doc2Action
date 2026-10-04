@@ -116,7 +116,7 @@ export function ProcessingScreen({
           type="button"
           onClick={handleCancelClick}
           aria-label="Back to Upload"
-          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#0c0d16]/80 hover:bg-[#121422]/95 text-zinc-400 hover:text-zinc-100 backdrop-blur-md border border-white/[0.08] hover:border-white/[0.18] shadow-xs text-xs sm:text-sm font-medium transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#e8ff47] focus-visible:ring-offset-2 focus-visible:ring-offset-[#04040a] group"
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#08120c]/85 hover:bg-[#0e1911]/95 text-zinc-400 hover:text-zinc-100 backdrop-blur-md border border-[rgba(120,160,100,0.15)] hover:border-[rgba(140,170,120,0.25)] shadow-xs text-xs sm:text-sm font-medium transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#e8ff47] focus-visible:ring-offset-2 focus-visible:ring-offset-[#04040a] group"
         >
           <ArrowLeftIcon size={14} className="transition-transform duration-200 group-hover:-translate-x-0.5" />
           <span>Back to Upload</span>
@@ -124,10 +124,10 @@ export function ProcessingScreen({
       </div>
 
       {/* Active Document Header / Batch Summary Card */}
-      <div className="p-4 sm:p-5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs space-y-3">
+      <div className="p-4 sm:p-5 rounded-xl border border-[rgba(140,170,120,0.14)] bg-[#0b120d] shadow-xs space-y-3">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700/60">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#0e1911] text-zinc-200 border border-[rgba(140,170,120,0.15)]">
               <DocumentIcon size={20} />
             </div>
             <div className="min-w-0 flex-1">
@@ -174,11 +174,11 @@ export function ProcessingScreen({
 
         {/* Multi-document badges list if more than 1 file */}
         {files.length > 1 && (
-          <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 flex flex-wrap gap-1.5">
+          <div className="pt-2 border-t border-[rgba(140,170,120,0.12)] flex flex-wrap gap-1.5">
             {files.map((file, idx) => (
               <span
                 key={`${file.name}-${idx}`}
-                className="inline-flex items-center text-[11px] font-mono px-2 py-0.5 rounded bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 max-w-[200px] truncate"
+                className="inline-flex items-center text-[11px] font-mono px-2 py-0.5 rounded bg-[#0e1911] text-zinc-300 border border-[rgba(140,170,120,0.15)] max-w-[200px] truncate"
                 title={file.name}
               >
                 {file.name}
@@ -215,7 +215,7 @@ export function ProcessingScreen({
           </div>
         </div>
       ) : (
-        <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 sm:p-8 space-y-6 shadow-xs">
+        <div className="rounded-xl border border-[rgba(140,170,120,0.14)] bg-[#0b120d] p-6 sm:p-8 space-y-6 shadow-xs">
           {/* Status Title & Accessible Aria Live Region */}
           <div className="space-y-1 text-center">
             <h2 className="text-lg sm:text-xl font-serif font-normal text-zinc-900 dark:text-zinc-100 tracking-tight">
