@@ -1,81 +1,135 @@
 # Specification 01: Frontend Specification
 
-**Project:** Document → Action Automator  
-**Status:** Approved Specification  
+**Project:** Doc2Action (Document → Action Automator)  
+**Status:** Implemented & Verified on `main`  
 
 ---
 
 ## 1. Overview
 
-The frontend delivers an accessible, uncluttered, and responsive user experience for the core Document $\rightarrow$ Action workflow. It is built as a single orchestrated user journey with three primary views:
+The frontend delivers an accessible, uncluttered, and responsive user experience for the complete Document $\rightarrow$ Action workflow. Built using **Next.js 16 (App Router)**, **React 19**, **TypeScript 5**, and **Tailwind CSS v4**, the application is organized into five primary views:
 
-1. **Upload Screen**
-2. **Processing Screen**
-3. **Results / Action Dashboard**
+1. **Upload Screen:** Single and batch document intake with drag-and-drop, validation, and sample selection.
+2. **Processing Screen:** Multi-stage animated progress timeline with realistic pipeline feedback.
+3. **Results Dashboard:** Immediate document analysis breakdown displaying actions, deadlines, events, and notes.
+4. **My Actions View:** Consolidated workspace task manager with status filters, urgency sorting, multi-select batch controls, and export tools.
+5. **Document History View:** Chronological workspace record of analyzed files with one-click reloading and bounded retention.
 
-All components are designed to be backend-independent, consuming typed interfaces defined in [specs/04-DATA_MODEL.md](04-DATA_MODEL.md).
+All components are strictly typed and decoupled from underlying transport details, consuming domain interfaces defined in [specs/04-DATA_MODEL.md](04-DATA_MODEL.md).
 
 ---
 
-## 2. Screen Specifications
+## 2. Component Directory Structure
+
+```text
+src/
+├── app/
+│   ├── layout.tsx             # Root layout with navbar & metadata
+│   ├── page.tsx               # Orchestrator for views (Upload, Processing, Results, My Actions, History)
+│   └── globals.css            # Dark-mode design system & animations
+├── components/
+│   ├── upload/                # Dropzone, file preview, validation & sample picker
+│   │   ├── DocumentUpload.tsx
+│   │   ├── FilePreviewCard.tsx
+│   │   ├── SamplePicker.tsx
+│   │   └── fileValidation.ts
+│   ├── processing/            # Multi-stage progress visualizer
+│   │   └── ProcessingScreen.tsx
+│   ├── results/               # Analysis results dashboard
+│   │   ├── ResultsDashboard.tsx
+│   │   ├── ActionCard.tsx
+│   │   ├── DeadlinesList.tsx
+│   │   ├── EventsList.tsx
+│   │   └── NotesList.tsx
+│   ├── actions/               # My Actions consolidated workspace
+│   │   └── MyActionsView.tsx
+│   ├── history/               # Document history view
+│   │   └── HistoryView.tsx
+│   └── ui/                    # Atomic UI design system primitives
+│       ├── badge.tsx
+│       ├── button.tsx
+│       ├── card.tsx
+│       └── icons.tsx
+└── lib/
+    ├── export/                # Client-side export engine (PDF, CSV, MD, ICS)
+    │   └── exportActions.ts
+    ├── services/              # API and client state services
+    │   ├── apiAnalysisService.ts
+    │   └── workspaceService.ts
+    └── types/                 # Shared TypeScript domain models
+        └── action.ts
+```
+
+---
+
+## 3. Screen Specifications
 
 ### Screen 1: Upload Screen
-Provides an immediate, intuitive file submission interface supporting single or multi-document batch uploads.
-- **Drag-and-Drop Area:** Visual dropzone with distinct drag-over hover feedback, supporting dragging multiple files at once.
+Provides an intuitive intake interface supporting single and multi-file batch uploads.
+- **Drag-and-Drop Area:** Visual dropzone with distinct drag-over hover feedback, supporting dragging multiple files simultaneously.
 - **Browse Files Button:** Native multi-file input trigger allowing document selection.
-- **Supported File Types:** Visual notice displaying accepted formats (`.pdf`, `.docx`, `.doc`, `.txt`).
-- **File Validation & Constraints:**
+- **Supported Formats:** `.pdf`, `.docx`, `.doc`, `.txt`.
+- **Validation Constraints:**
   - Maximum size: 10 MB per file.
-  - Maximum batch: 5 documents per upload batch.
-  - Independent validation: Each selected file is validated individually; invalid files are clearly flagged without silently discarding valid files.
-  - Duplicate detection: Prevents duplicate file additions by matching filename and byte size.
-- **Selected Documents List / Preview:**
-  - Compact multi-file list showing document name, format badge, readable size, and per-item status (Ready vs Unsupported).
-  - Individual remove action per document with accessible labelling.
-  - "+ Add more documents" trigger enabled until the 5-document batch ceiling is reached.
-- **Primary CTA:** "Analyze Document(s)" button, enabled only when at least one valid document is selected and all invalid selections are resolved.
-- **Data Flow:** Produces `File[] → unified AnalysisResult` with per-action `sourceDocument` tracking.
+  - Maximum batch: 5 documents per batch.
+  - Duplicate detection: Prevents duplicate additions matching filename and byte size.
+  - Individual validation: Invalid files are flagged individually without blocking valid selections.
+- **File Preview List:** Shows file name, format badge, human-readable size, and remove triggers.
+- **Sample Document Picker:** Preloaded sample documents (college notices, event circulars) for rapid judge testing.
+- **Primary CTA:** "Analyze Document(s)" button, enabled only when valid documents are queued.
 
 ---
 
 ### Screen 2: Processing Screen
-Maintains user engagement and transparency while the document is analyzed.
-- **Multi-Step Progress Indicator:**
-  1. `Uploading` — Document payload transfer
-  2. `Extracting` — Document text parsing / OCR
-  3. `Analyzing` — Semantic parsing of dates, requirements, and directives
-  4. `Generating Actions` — Formatting actions, deadlines, priorities, and events
-- **Visual Feedback:** Active step pulse, completed step checks, and clear textual descriptions.
-- **Error Handling State:** Clear error message with retry or upload-different-file button if processing fails.
+Maintains user engagement with transparent visual feedback as documents are processed.
+- **Multi-Stage Progress Timeline:**
+  1. `Uploading` — File payload transfer.
+  2. `Extracting` — Text extraction (`pdf-parse`, `mammoth`).
+  3. `Analyzing` — Semantic parsing, date detection, and priority assignment via Groq.
+  4. `Generating Actions` — Normalization, deduplication, and database persistence.
+- **Visual Feedback:** Stage pulse animations, completion checks, and overall progress percentage.
+- **Error Handling:** Non-alarming error card with retry and choose-another-file options if processing fails.
 
 ---
 
-### Screen 3: Results / Action Dashboard
-Displays extracted actionable items with clear visual hierarchy.
-
-#### Summary Metrics Row
-Three distinct counter cards:
-- **Total Actions Detected**
-- **Total Deadlines Detected**
-- **Total Events Detected**
-
-#### Action Items List / Cards
-Each extracted action item displays:
-- **Title:** Crisp, imperative action statement (e.g., *"Submit project report"*).
-- **Description:** Contextual explanation and details extracted from the document.
-- **Deadline:** Explicit due date/time with visual urgency indicator.
-- **Priority Badge:** High (urgent/strict penalty), Medium (normal obligation), Low (optional/informational).
-- **Category Badge:** Contextual grouping (e.g., Academic, Administrative, Financial, Event).
-- **Status:** Initial status (e.g., Pending, In Progress, Completed).
-
-#### Dashboard Controls
-- **Filter / Tab Controls:** Quick filter by priority (All, High, Medium, Low) or category.
-- **Reset / Analyze Another Document CTA:** Allows user to return smoothly to the Upload Screen.
+### Screen 3: Results Dashboard
+Displays the immediate output of the analyzed document(s).
+- **Summary Metrics Row:** Four counter cards displaying Total Actions, Deadlines, Events, and Important Notes.
+- **Action Cards:** Structured cards displaying action title, description, deadline, priority badge (`High`, `Medium`, `Low`), category badge, and source snippet.
+- **Deadlines & Events Lists:** Dedicated cards for chronological due dates and scheduled events/meetings.
+- **Important Notes:** Bulleted section for prerequisites, rules, and non-actionable notices.
+- **Action Controls:** "View in My Actions" CTA and "Analyze Another Document" reset trigger.
 
 ---
 
-## 3. Architecture Principles
+### Screen 4: My Actions View
+A consolidated, workspace-wide task manager aggregating actions across all analyzed documents.
+- **Interactive Metric Cards:** Total Tasks, Not Completed (Pending), and Completed. Clicking filters the view immediately.
+- **Category Filter:** Filter by Academic, Administrative, Finance, Event, or General.
+- **Sorting Options:** Urgency (due soonest), Priority (High $\rightarrow$ Low), Title (A $\rightarrow$ Z), and Newest added.
+- **Action Completion:** Native checkbox toggles directly updating completion state in PostgreSQL.
+- **Multi-Select Batch Toolbar:** Enter selection mode to select multiple tasks and perform batch actions:
+  - Mark Completed
+  - Mark Not Completed
+  - Bulk Delete
+  - Export Selected
+- **Export Actions Dropdown:** One-click export to PDF, CSV, Markdown, and Calendar (`.ics`), respecting the user's active filters or selections.
 
-1. **State Independence:** The UI flow (`upload` $\rightarrow$ `processing` $\rightarrow$ `dashboard`) is driven by state machine props, making it decoupled from whether the source data comes from a mock adapter or a real HTTP endpoint.
-2. **Atomic UI Primitives:** Reusable components (Card, Badge, Button, ProgressIndicator, Modal) reside under `src/components/ui/`.
-3. **Pure Presentation:** Components do not embed hardcoded API fetch calls; they receive data and callbacks via props or dedicated service hooks.
+---
+
+### Screen 5: Document History View
+Displays previously analyzed documents in the current browser workspace.
+- **Document List:** Card view with file name, file size, upload timestamp, and extracted task counts.
+- **Reload Actions:** Click any historical document to view its specific action items.
+- **Delete Document:** Cascade-delete a document and its associated action items from the workspace.
+- **Bounded Retention Notice:** Displays workspace retention policy (most recent 20 documents).
+
+---
+
+## 4. Export Integration
+
+The frontend embeds a pure client-side export utility ([src/lib/export/exportActions.ts](../src/lib/export/exportActions.ts)):
+- **PDF Checklist (`.pdf`):** Multi-page vector document with checkboxes, priority badges, category tags, deadlines, source references, and page numbers.
+- **CSV Spreadsheet (`.csv`):** Excel-compatible CSV with UTF-8 BOM, escaped values, and structured metadata.
+- **Markdown Checklist (`.md`):** Clean portable checklist categorized into Pending and Completed tasks.
+- **Calendar (`.ics`):** RFC 5545 iCalendar file mapping deadlines to all-day events and timed meetings to UTC timestamps.

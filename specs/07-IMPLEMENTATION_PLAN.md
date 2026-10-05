@@ -1,120 +1,42 @@
-# Specification 07: Implementation Roadmap
+# Specification 07: Implementation Roadmap & Status
 
-**Project:** Document → Action Automator  
+**Project:** Doc2Action (Document → Action Automator)  
 **Hackathon:** WCC Launchpad 30  
+**Status:** MVP Fully Implemented on `main`  
 
 ---
 
-## Phased Development Matrix
+## 1. Development Matrix & Status
 
-| Phase | Title | Status | Primary Focus |
-|---|---|---|---|
-| **Phase 0** | Repository Inspection | **COMPLETE** | Baseline architecture & dependency audit |
-| **Phase 1** | Project Context & Specifications | **IN PROGRESS** | Shared source of truth & contract definition |
-| **Phase 2** | Frontend Foundation & Types | **NOT STARTED** | Domain types, mock adapter, and UI primitives |
-| **Phase 3** | Upload Workflow UI | **NOT STARTED** | Dropzone, file preview, validation & samples |
-| **Phase 4** | Processing State UI | **NOT STARTED** | Multi-step progress timeline & error states |
-| **Phase 5** | Results & Action Dashboard | **NOT STARTED** | Metrics summary, action cards & filter controls |
-| **Phase 6** | Backend Integration | **NOT STARTED** | Live API client integration & error handling |
-| **Phase 7** | Responsive Testing & Polish | **NOT STARTED** | Cross-device testing, accessibility, animations |
-| **Phase 8** | E2E Hackathon Demo Testing | **NOT STARTED** | Final scenario rehearsal & demo script validation |
-
----
-
-## Detailed Phase Breakdown
-
-### Phase 0: Repository Inspection
-- **Goal:** Audit existing repository structure, configurations, and readiness.
-- **Scope:** Inspect dependencies, Next.js / React versions, Tailwind setup, branch status.
-- **Expected Output:** Complete Phase 0 Inspection Report.
-- **Testing Requirements:** Verify `npm run build` and TypeScript compilation.
-- **Status:** **COMPLETE**
+| Phase | Milestone | Status | Deliverables & Verified Scope |
+|---|---|:---:|---|
+| **Phase 0** | Repository Inspection | **COMPLETE** | Audited Next.js 16, React 19, TypeScript strict setup, Tailwind v4. |
+| **Phase 1** | Context & Specifications | **COMPLETE** | Authored initial specifications and architecture contracts. |
+| **Phase 2** | Frontend Foundation & Types | **COMPLETE** | Domain models (`src/lib/types/action.ts`), UI primitives (`Card`, `Badge`, `Button`, `icons`). |
+| **Phase 3** | Upload Workflow UI | **COMPLETE** | Drag-and-drop dropzone, batch support (up to 5 files), validation (10MB limit), sample picker. |
+| **Phase 4** | Processing Progress UI | **COMPLETE** | 4-stage animated timeline (`Uploading` $\rightarrow$ `Extracting` $\rightarrow$ `Analyzing` $\rightarrow$ `Generating Actions`). |
+| **Phase 5** | Results & Action Dashboard | **COMPLETE** | Metrics summary row, categorized action cards, deadlines timeline, and important note cards. |
+| **Phase 6** | Backend & Database Persistence | **COMPLETE** | Next.js API route handlers (`/api/analyze`, `/api/actions`, `/api/history`, `/api/documents`), Prisma ORM, PostgreSQL schema. |
+| **Phase 7** | Task Management ("My Actions") | **COMPLETE** | Consolidated workspace task manager, status toggles, urgency sorting, category filtering, and multi-select batch controls. |
+| **Phase 8** | Client-Side Export Engine | **COMPLETE** | Vector PDF Checklist (`jspdf` with page breaks), CSV Spreadsheet (Excel UTF-8 BOM), Markdown Checklist, Calendar (`.ics` RFC 5545). |
+| **Phase 9** | AI Optimization & Rate Limiting | **COMPLETE** | Groq SDK (`openai/gpt-oss-20b`, low reasoning, 1200 token ceiling), rolling TPM token limiter, daily token quota detection, error normalization. |
+| **Phase 10** | Final Documentation & Packaging | **COMPLETE** | Judge-facing README, updated context files, verified clean build, OCR future-scope documentation. |
 
 ---
 
-### Phase 1: Project Context & Specifications
-- **Goal:** Establish clear, shared technical documentation as the project source of truth.
-- **Scope:** Author `README.md`, `context/` files, and `specs/00` to `specs/07`.
-- **Expected Output:** Comprehensive documentation suite with zero unapproved code edits.
-- **Testing Requirements:** Documentation review, Git branch verification, clean `npm run build`.
-- **Status:** **IN PROGRESS**
+## 2. Post-MVP Roadmap (Future Scope)
 
----
+The following capabilities are planned for post-hackathon development increments:
 
-### Phase 2: Frontend Foundation & Domain Types
-- **Goal:** Scaffold the frontend architecture without coupling to real APIs.
-- **Scope:** 
-  - Create `src/lib/types/action.ts` adhering to [specs/04-DATA_MODEL.md](04-DATA_MODEL.md).
-  - Implement reusable UI primitives (`Card`, `Badge`, `Button`, `StatusIndicator`, inline icons) under `src/components/ui/`.
-  - Create mock data samples (e.g. college notice, project memo) and a `MockDocumentAnalysisService`.
-- **Expected Output:** Tested UI primitives and type-safe mock service.
-- **Testing Requirements:** Component render tests and TypeScript type checking.
-- **Status:** **NOT STARTED**
+### Phase 11: Production OCR Integration (Future Scope)
+- **Objective:** Support scanned, photographed, and non-selectable PDF/image circulars.
+- **Reference Implementation:** An experimental prototype on the `feature/ai` branch integrates Sarvam AI's vision API with an offline Tesseract.js fallback.
+- **Goal:** Stabilize error handling, manage latency, and merge into production.
 
----
+### Phase 12: User Authentication & Multi-Tenancy (Future Scope)
+- **Objective:** Add email/password and OAuth sign-in (e.g. NextAuth / Supabase Auth).
+- **Goal:** Enable persistent user accounts across multiple browser devices and teams.
 
-### Phase 3: Upload Workflow UI
-- **Goal:** Implement the primary document intake screen.
-- **Scope:**
-  - Build dropzone with drag-and-drop feedback and file selector.
-  - Client-side validation (file type, size limits).
-  - File preview card with remove/replace capability.
-  - Quick sample document picker for rapid testing/demos.
-- **Expected Output:** Fully interactive Upload view.
-- **Testing Requirements:** Drag-and-drop file acceptance, rejection of invalid files, sample file selection.
-- **Status:** **NOT STARTED**
-
----
-
-### Phase 4: Processing State UI
-- **Goal:** Provide clear, animated feedback during document analysis.
-- **Scope:**
-  - Multi-step timeline (`Uploading` $\rightarrow$ `Extracting` $\rightarrow$ `Analyzing` $\rightarrow$ `Generating Actions`).
-  - Active step pulse and transition states.
-  - Simulated processing progress tied to mock service.
-- **Expected Output:** Reassuring, hackathon-friendly processing visualizer.
-- **Testing Requirements:** Visual verification of stage progression, error state handling.
-- **Status:** **NOT STARTED**
-
----
-
-### Phase 5: Results & Action Dashboard
-- **Goal:** Display extracted actions, deadlines, and events with high clarity.
-- **Scope:**
-  - Metric counters (Total Actions, Deadlines, Events).
-  - Action card list (title, description, due date, priority badge, category badge).
-  - Filtering by priority or category.
-  - "Analyze Another Document" reset action.
-- **Expected Output:** Complete, polished results dashboard view.
-- **Testing Requirements:** Data rendering from mock results, filter state accuracy, reset workflow.
-- **Status:** **NOT STARTED**
-
----
-
-### Phase 6: Backend Integration
-- **Goal:** Connect the frontend to live backend processing endpoints once available.
-- **Scope:**
-  - Implement `ApiDocumentAnalysisService` implementing the shared service interface.
-  - Seamless toggle between mock and live API based on environment configuration.
-  - Live error handling and network timeout recovery.
-- **Expected Output:** End-to-end connected application.
-- **Testing Requirements:** Live document upload and verification of response parsing.
-- **Status:** **NOT STARTED**
-
----
-
-### Phase 7: Responsive Testing & Polish
-- **Goal:** Ensure flawless presentation across devices and viewports.
-- **Scope:** Mobile and tablet responsive layout checks, typography tuning, contrast adjustments.
-- **Expected Output:** Polished, responsive web app.
-- **Testing Requirements:** Cross-browser and responsive viewport checks (375px to 1440px).
-- **Status:** **NOT STARTED**
-
----
-
-### Phase 8: End-to-End Hackathon Demo Testing
-- **Goal:** Prepare and validate the live hackathon demonstration scenario.
-- **Scope:** Rehearse the standard demo document (e.g. College Notice $\rightarrow$ Extracted submission deadlines), verify edge cases, and ensure fast load times.
-- **Expected Output:** Presentation-ready application and contingency plans.
-- **Testing Requirements:** Complete end-to-end dry run.
-- **Status:** **NOT STARTED**
+### Phase 13: Direct Calendar & Messaging Integrations (Future Scope)
+- **Objective:** 2-way calendar sync via Google Calendar and Microsoft Graph APIs.
+- **Goal:** Automatically push deadline alerts directly to calendar schedules and messaging webhooks (Slack / WhatsApp).

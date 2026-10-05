@@ -1,72 +1,77 @@
 # Specification 05: UX Flow & Interaction States
 
-**Project:** Document → Action Automator  
-**Status:** Approved Specification  
+**Project:** Doc2Action (Document → Action Automator)  
+**Status:** Implemented & Verified on `main`  
 
 ---
 
-## 1. End-to-End User Journey
+## 1. End-to-End User Journeys
+
+Doc2Action provides a cohesive experience centered on turning static files into organized action:
 
 ```
-[ Step 1: Open App ]
-         │
-         ▼
-[ Step 2: View Upload Interface ] ◄── (Empty State)
-         │
-         ▼
-[ Step 3 & 4: Select / Drop Document ] ──► (Selected File State)
-         │
-         ▼
-[ Step 5: Click "Analyze Document" ]
-         │
-         ▼
-[ Step 6: Processing & Progress Animation ] ──► (Uploading / Extracting / Analyzing)
-         │
-         ▼
-[ Step 7 & 8: Display Results Dashboard ] ──► (Success State)
-         │
-         ▼
-[ Step 9: User Reviews Actions & Deadlines ]
-         │
-         ▼
-[ Optional: "Upload Another" / Reset ] ──► Return to Step 2
+[ Primary Intake Flow ]
+Upload / Drop Document(s) ──► Processing Progress ──► Results Dashboard ──► My Actions Workspace
+                                                                                │
+                                                    ┌───────────────────────────┴───────────────────────────┐
+                                                    ▼                                                       ▼
+                                       Task Completion & Multi-Select                              Client-Side Export
+                                       (Toggle, Sort, Filter, Delete)                          (PDF, CSV, Markdown, ICS)
 ```
 
 ---
 
-## 2. Interaction States Breakdown
+## 2. Journey Breakdown
 
-### 1. Empty State (Initial Load)
-- **Visuals:** Prominent upload card with dropzone icon, informative copy, accepted file types, and a preloaded sample document quick-selector.
-- **Action:** Primary "Analyze Document" CTA is disabled until a file is selected.
+### Journey 1: Document Intake & Processing
+1. **Empty State:** User arrives at the root route (`/`). A modern dark-mode upload zone presents drag-and-drop feedback, format notices (`.pdf`, `.docx`, `.doc`, `.txt`), file size limits (10MB), and preloaded sample document buttons.
+2. **File Selection:** User drops or selects 1–5 files. Selected files appear in a preview list with size, format badge, and remove controls.
+3. **Processing:** Clicking "Analyze Document(s)" activates the multi-stage progress screen:
+   - `Uploading` $\rightarrow$ `Extracting` $\rightarrow$ `Analyzing` $\rightarrow$ `Generating Actions`.
+   - Real-time stage indicators and overall percentage keep the user informed.
+4. **Results Presentation:** Results dashboard reveals summary metric counters, categorized action cards with deadline tags and priority badges, scheduled events, and important notes.
 
-### 2. Selected File State
-- **Visuals:** Dropzone transitions to reveal a clean file summary card showing:
-  - File name
-  - Formatted file size
-  - Document icon
-  - Remove / Change File button
-- **Action:** Primary "Analyze Document" CTA is highlighted and enabled.
+---
 
-### 3. Uploading & Processing State
-- **Visuals:** Upload card transitions into a focused progress timeline:
-  - Progress bar / percentage or step indicator.
-  - Active step with animated pulse:
-    - `Uploading` $\rightarrow$ `Extracting` $\rightarrow$ `Analyzing` $\rightarrow$ `Generating Actions`
-- **Action:** Background interaction is locked to prevent accidental duplicate submissions.
+### Journey 2: Consolidated "My Actions" Workspace
+1. **Access:** Accessible anytime via the "My Actions" tab in the top navigation bar.
+2. **Metric Filters:** Three interactive cards at the top:
+   - **Total Tasks:** Displays all workspace actions.
+   - **Not Completed:** Filters strictly for pending obligations.
+   - **Completed:** Filters strictly for accomplished tasks.
+3. **Category Selector:** Dropdown to isolate actions by domain (Academic, Administrative, Finance, Event, General).
+4. **Sorting:** Sort actions by Urgency (due soonest), Priority (High $\rightarrow$ Low), Title (A $\rightarrow$ Z), or Newest Added.
+5. **Interactive Checkbox:** Clicking a card's checkbox instantly toggles completion status with optimistic UI updates and immediate PostgreSQL synchronization.
 
-### 4. Success State (Action Dashboard)
-- **Visuals:** Smooth reveal of the dashboard view:
-  - Header with document title and timestamp.
-  - Summary metrics row (Actions, Deadlines, Events count).
-  - Categorized/filtered action card list with priority tags and due dates.
-  - Section for important notes or general events.
-- **Action:** Ability to filter items, mark items as completed/reviewed, or click "Analyze Another Document" to reset.
+---
 
-### 5. Error State
-- **Visuals:** Clean, non-alarming error card detailing the issue (e.g. unsupported format, corrupted file, or processing timeout).
-- **Action:** Clear "Try Again" or "Choose Another Document" CTA.
+### Journey 3: Multi-Select Batch Operations
+1. **Activation:** Clicking "Select Tasks" opens multi-select mode.
+2. **Sticky Batch Toolbar:** A floating glassmorphism toolbar anchors to the screen showing:
+   - Selected count (`X of Y Selected`).
+   - "Select All Visible" / "Deselect All" quick toggle.
+   - "Mark Completed" batch action.
+   - "Mark Not Completed" batch action.
+   - "Delete" batch action (opens an accessible confirmation modal).
+   - "Export Selected" dropdown menu.
+3. **Exit:** Clicking "Done Selecting" or the exit icon cleanly restores standard browsing mode.
 
-### 6. No Actionable Items Found State
-- **Visuals:** Reassuring empty-results card stating that the document was analyzed successfully, but no direct deadlines or urgent tasks were identified.
-- **Action:** Quick CTA to upload a different document.
+---
+
+### Journey 4: Action Export
+1. **Toolbar Trigger:** Clicking "Export" in the controls toolbar or batch toolbar opens the export dropdown menu.
+2. **Target Scope:** Automatically exports visible tasks (respecting active status and category filters) or selected tasks if in multi-select mode.
+3. **Format Options:**
+   - **PDF Checklist:** Formatted A4 checklist document with dynamic page breaks and metadata.
+   - **CSV Spreadsheet:** RFC 4180 CSV with UTF-8 BOM for Microsoft Excel and Google Sheets.
+   - **Markdown Checklist:** Clean checklist with `- [ ]` and `- [x]` syntax for Notion and Obsidian.
+   - **Calendar (`.ics`):** RFC 5545 iCalendar schedule with all-day events for date cutoffs and UTC timestamps for meetings.
+4. **Feedback:** Instant browser file download accompanied by a non-intrusive, auto-dismissing toast notification.
+
+---
+
+### Journey 5: Document History
+1. **Access:** Click the "History" tab in the top navigation.
+2. **Chronological Records:** Review previously analyzed documents, upload timestamps, file sizes, and extracted action counts.
+3. **Inspection:** Click any document to view its specific action items.
+4. **Deletion:** Delete historical documents to remove them and their associated actions from the workspace.

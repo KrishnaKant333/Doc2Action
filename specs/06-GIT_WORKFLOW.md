@@ -1,63 +1,44 @@
-# Specification 06: Git Workflow & Collaboration
+# Specification 06: Git Workflow & Branch Taxonomy
 
-**Project:** Document → Action Automator  
-**Status:** Approved Workflow Standard  
+**Project:** Doc2Action (Document → Action Automator)  
+**Status:** Approved & Finalized  
 
 ---
 
-## 1. Branching Model & Lifecycle
-
-All team members follow a feature branch workflow to protect `main`:
+## 1. Branch Taxonomy & Roles
 
 ```
-main (Production / Stable)
+origin/main (Production / Stable / Official Hackathon Submission)
  │
- ├──► create branch: frontend/<name> or backend/<name>
- │     │
- │     ├──► local development
- │     ├──► local verification (npm run lint && npm run build)
- │     ├──► focused logical commits
- │     │
- │     └──► push branch to origin
- │           │
- │           └──► open Pull Request to main
- │                 │
- │                 ├──► team review & validation
- │                 └──► merge into main
+ ├──► frontend/yash       (Frontend UI components & mock service)
+ ├──► integration         (Full-stack API & Prisma database integration)
+ └──► feature/ai          (EXPERIMENTAL: Sarvam AI & Tesseract OCR prototype - UNMERGED)
 ```
 
+### The `main` Branch (Production / Stable)
+- The official, verified submission for hackathon evaluation and production deployment.
+- Contains the complete, working Document $\rightarrow$ Action pipeline:
+  - Document text extraction (PDF, DOCX, TXT).
+  - Groq AI extraction (`openai/gpt-oss-20b`, low reasoning, structured JSON).
+  - PostgreSQL database persistence via Prisma ORM.
+  - Consolidated "My Actions" task manager and multi-select batch controls.
+  - Client-side export engine (PDF, CSV, Markdown, ICS).
+- Guaranteed to pass `npm run build`, `npm run lint`, and TypeScript compilation cleanly.
+
+### The `feature/ai` Branch (Experimental / Unmerged)
+- Development branch containing experimental OCR exploration authored by Prathik.
+- Prototypes image/scanned document processing using the **Sarvam AI Vision API** with an offline **Tesseract.js** fallback.
+- **Strictly unmerged from `main`** to avoid introducing experimental dependencies or breaking the stable evaluation pipeline.
+
 ---
 
-## 2. Branch Naming Conventions
+## 2. Collaboration & Submission Standards
 
-- **Frontend Features / Fixes:** `frontend/<name>` (e.g. `frontend/yash`)
-- **Backend Features / Fixes:** `backend/<name>`
-- **Documentation / Specs:** `docs/<name>` or within feature branch during designated phase
-
----
-
-## 3. Strict Collaboration Rules
-
-1. **Never Commit Directly to `main`:**
-   - The `main` branch is reserved for verified, stable increments.
-2. **Pull Latest `main` Before New Phases:**
-   - Always run `git pull origin main` before branching or beginning a new development increment.
-3. **Focused, Logical Commits:**
-   - One commit should represent one complete logical piece of work.
-   - Do not bundle unrelated refactorings or stylistic tweaks into feature commits.
-4. **Descriptive Commit Messages:**
-   - Use standard conventional prefixes:
-     - `docs:` Documentation updates
-     - `feat:` New user-facing feature
-     - `fix:` Bug fix
-     - `chore:` Configuration or maintenance
-     - `refactor:` Code restructuring without behavioral change
-   - Example: `docs: establish project context and specifications`
-5. **Pre-Commit Verification:**
-   - Before committing, ensure the project builds cleanly without errors:
-     ```bash
-     npm run lint
-     npm run build
-     ```
-6. **Pull Requests Required:**
-   - All code merges to `main` must happen via PR with clear descriptions of what was added and how to test it.
+1. **Production Sanctity:** The `main` branch is the sole evaluation baseline for hackathon judges.
+2. **Feature Isolation:** Unstable or experimental prototypes remain quarantined on feature branches.
+3. **Clean Build Guarantee:** Any commit on `main` must compile cleanly without TypeScript or ESLint errors:
+   ```bash
+   npm run lint
+   npm run build
+   ```
+4. **No Secret Commits:** `.env.local` is git-ignored. API keys and connection strings are strictly kept out of version control.
