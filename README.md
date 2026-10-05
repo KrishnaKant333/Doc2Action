@@ -211,20 +211,6 @@ Users can export their actions at any time directly from the **My Actions** tool
 
 ---
 
-## Judge / Demo Evaluation Flow
-
-To evaluate the core user workflow in under two minutes:
-
-1. **Intake:** On the home page, select or drag-and-drop a sample document (e.g., a syllabus, college notice, or project memo in PDF/DOCX/TXT).
-2. **Processing:** Observe the real-time 4-stage pipeline animation (`Uploading` $\rightarrow$ `Extracting` $\rightarrow$ `Analyzing` $\rightarrow$ `Generating Actions`).
-3. **Review Results:** Review the extracted dashboard displaying categorized Action Items, Deadlines, Events, and Notes.
-4. **My Actions:** Navigate to the **My Actions** tab in the top navigation to view the consolidated workspace task manager.
-5. **Manage Tasks:** Click the checkbox on any task to toggle its completion status, filter by "Not Completed", or test multi-select batch controls.
-6. **Export:** Click the **Export** dropdown button to download a clean **PDF Checklist** or **CSV Spreadsheet**.
-7. **History:** Visit the **History** tab to see previously uploaded documents and reload their extracted action items.
-
----
-
 ## Current MVP Boundaries & Limitations
 
 - **Text-Layer Requirement:** The production/main application processes documents with embedded text streams (digital PDFs, DOCX, TXT). Scanned documents without text layers are part of the future OCR scope.
