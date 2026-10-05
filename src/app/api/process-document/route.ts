@@ -1,6 +1,8 @@
 import { extractTextFromPDF } from "@/ai/processing/extractText";
 import { analyzeDocument } from "@/ai/services/groq";
 import type { ProcessDocumentResponse } from "@/ai/types/api";
+import { extractTextWithSarvam } from "@/ai/processing/sarvamVision";
+import { extractTextWithTesseract } from "@/ai/processing/tesseractOcr";
 
 export async function POST(request: Request) {
   try {
@@ -42,21 +44,61 @@ if (file.size > MAX_FILE_SIZE) {
     const buffer = Buffer.from(await file.arrayBuffer());
 
     // Extract text from PDF
-    const text = await extractTextFromPDF(buffer);
+    let text = await extractTextFromPDF(buffer);
 
-    const cleanedText = text.trim();
 
-if (!cleanedText || cleanedText.length < 30) {
-  return Response.json(
-    {
-      success: false,
-      error:
-        "This PDF appears to be scanned or contains too little readable text.",
-      code: "OCR_REQUIRED",
-    },
-    { status: 400 }
-  );
+const cleanedText = text
+  .replace(/--\s*\d+\s+of\s+\d+\s*--/gi, "")
+  .trim();
+
+if (cleanedText.length < 30) {
+  console.log("No meaningful PDF text found. Starting Sarvam OCR...");
+
+  try {
+    text = await extractTextWithSarvam(buffer, file.name);
+
+    if (!text || text.trim().length < 30) {
+      throw new Error("Sarvam returned insufficient text");
+    }
+
+    console.log("Sarvam OCR succeeded.");
+  } catch (sarvamError) {
+    console.error(
+      "Sarvam OCR failed. Falling back to Tesseract...",
+      sarvamError
+    );
+
+    try {
+      text = await extractTextWithTesseract(buffer);
+
+      if (!text || text.trim().length < 30) {
+        return Response.json(
+          {
+            success: false,
+            error: "Could not extract enough text from this PDF.",
+            code: "OCR_FAILED",
+          },
+          { status: 422 }
+        );
+      }
+
+      console.log("Tesseract OCR succeeded.");
+    } catch (tesseractError) {
+      console.error("Tesseract OCR also failed:", tesseractError);
+
+      return Response.json(
+        {
+          success: false,
+          error: "Could not extract text from this scanned PDF.",
+          code: "OCR_FAILED",
+        },
+        { status: 422 }
+      );
+    }
+  }
 }
+console.log("FINAL TEXT LENGTH:", text.length);
+console.log("FINAL TEXT PREVIEW:", text.slice(0, 500));
 
     // Analyze extracted text using Groq
     const analysis = await analyzeDocument(text);
